@@ -6,6 +6,9 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+/// 统一的响应格式
+pub(crate) type Result<T> = std::result::Result<Resp<T>, AppError>;
+
 #[derive(Deserialize, Serialize)]
 pub(crate) struct Resp<T> {
     code: u32,

@@ -8,9 +8,8 @@ use axum::{
 };
 
 mod handlers;
-mod model;
+mod prelude;
 use handlers::create_user;
-use model::{AppError, Resp};
 use tracing::{Instrument, info_span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use uuid::Uuid;

@@ -3,15 +3,15 @@ use rand::Rng;
 use serde::Serialize;
 use tracing::info;
 
-use crate::{AppError, Resp};
+use crate::prelude::{AppError, Resp, Result};
 
 /// 从请求头获取 trace_id
-pub async fn hello_world(Extension(trace_id): Extension<String>) -> Result<Resp<String>, AppError> {
+pub async fn hello_world(Extension(trace_id): Extension<String>) -> Result<String> {
     info!("Hello World called with trace_id: {}", trace_id);
     Ok(Resp::success(format!("trace_id is {}", trace_id)))
 }
 
-pub async fn create_user() -> Result<Resp<User>, AppError> {
+pub async fn create_user() -> Result<User> {
     let number = {
         let mut rng = rand::rng();
         rng.random_range(1..=1000)
