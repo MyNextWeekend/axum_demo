@@ -43,16 +43,19 @@ async fn log_middleware(mut req: Request, next: Next) -> impl IntoResponse {
 
 #[tokio::main]
 async fn main() {
+    // 初始化 tracing 订阅者
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer())
         .with(tracing_subscriber::filter::LevelFilter::INFO)
         .init();
 
+    // 注册路由 注册中间件
     let app = Router::new()
         .route("/", get(handlers::hello_world))
         .route("/users", get(create_user))
         .layer(middleware::from_fn(log_middleware));
 
+    // 启动 HTTP 服务器
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     tracing::info!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();

@@ -27,10 +27,10 @@ impl<T> Resp<T> {
     }
     /// 构造失败响应
     /// code: 0 成功，非 0 失败
-    pub(crate) fn error(code: u32, msg: String) -> Self {
+    pub(crate) fn error(code: u32, msg: impl Into<String>) -> Self {
         Resp {
             code,
-            msg,
+            msg: msg.into(),
             data: None,
         }
     }
