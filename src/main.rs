@@ -8,7 +8,7 @@ use axum::{
 };
 
 mod handlers;
-mod prelude;
+mod errror;
 use handlers::create_user;
 use tracing::{Instrument, info_span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
