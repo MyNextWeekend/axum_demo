@@ -3,15 +3,15 @@ use rand::Rng;
 use serde::Serialize;
 use tracing::info;
 
-use crate::errror::{AppError, Resp, AppResult};
+use crate::{Error, Resp, Result};
 
 /// 从请求头获取 trace_id
-pub async fn hello_world(Extension(trace_id): Extension<String>) -> AppResult<String> {
+pub async fn hello_world(Extension(trace_id): Extension<String>) -> Result<String> {
     info!("Hello World called with trace_id: {}", trace_id);
     Ok(Resp::success(format!("trace_id is {}", trace_id)))
 }
 
-pub async fn create_user() -> AppResult<User> {
+pub async fn create_user() -> Result<User> {
     let number = {
         let mut rng = rand::rng();
         rng.random_range(1..=1000)
@@ -20,13 +20,13 @@ pub async fn create_user() -> AppResult<User> {
     info!("Generated random number: {}", number);
 
     if number % 5 == 0 {
-        return Err(AppError::NotFound);
+        return Err(Error::NotFound);
     }
     if number % 3 == 0 {
-        return Err(AppError::Unauthorized);
+        return Err(Error::Unauthorized);
     }
     if number % 2 == 0 {
-        return Err(AppError::DatabaseError("too long".to_owned()));
+        return Err(Error::DatabaseError("too long".to_owned()));
     }
     let user = User {
         id: 1337,

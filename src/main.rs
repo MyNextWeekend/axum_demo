@@ -7,8 +7,9 @@ use axum::{
     routing::get,
 };
 
-mod handlers;
 mod errror;
+mod handlers;
+use errror::{Error, Resp, Result};
 use handlers::create_user;
 use tracing::{Instrument, info_span};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
