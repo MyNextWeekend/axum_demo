@@ -1,46 +1,11 @@
-use axum::{
-    Router,
-    extract::Request,
-    http::HeaderValue,
-    middleware::{self, Next},
-    response::IntoResponse,
-    routing::get,
-};
+mod core;
+mod error;
+mod router;
 
-mod errror;
-mod handlers;
-use errror::{Error, Resp, Result};
-use handlers::create_user;
-use tracing::{Instrument, info_span};
+use axum::{Router, middleware, routing::get};
+use core::state::AppState;
+use error::{Error, Resp, Result};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use uuid::Uuid;
-
-/// 日志中间件
-async fn log_middleware(mut req: Request, next: Next) -> impl IntoResponse {
-    // 1. 从请求头读取 trace_id，默认用 Uuid::new_v4()
-    let trace_id = req
-        .headers()
-        .get("x-trace-id")
-        .and_then(|h| h.to_str().ok())
-        .map(|s| s.to_string())
-        .unwrap_or_else(|| Uuid::new_v4().to_string().replace("-", ""));
-
-    // 2. 将 trace_id 放入请求扩展，供 handler 提取
-    req.extensions_mut().insert(trace_id.clone());
-
-    // 3. 使用 tracing::instrument 将 trace_id 注入 Span
-    let mut response = next
-        .run(req)
-        .instrument(info_span!("request", trace_id = %trace_id))
-        .await;
-
-    // 4. 在响应头中添加同一份 trace_id
-    response
-        .headers_mut()
-        .insert("x-trace-id", HeaderValue::from_str(&trace_id).unwrap());
-
-    response
-}
 
 #[tokio::main]
 async fn main() {
@@ -50,11 +15,14 @@ async fn main() {
         .with(tracing_subscriber::filter::LevelFilter::INFO)
         .init();
 
-    // 注册路由 注册中间件
+    let state: AppState = core::state::AppState::new().await;
+
+    // 初始化路由
     let app = Router::new()
-        .route("/", get(handlers::hello_world))
-        .route("/users", get(create_user))
-        .layer(middleware::from_fn(log_middleware));
+        .route("/", get(router::hello::hello_world))
+        .route("/users", get(router::user::create_user))
+        .layer(middleware::from_fn(core::middleware::log_middleware))
+        .with_state(state);
 
     // 启动 HTTP 服务器
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();

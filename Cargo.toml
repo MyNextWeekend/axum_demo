@@ -12,3 +12,7 @@ tokio = { version = "1.44.2", features = ["full"] }
 tracing = { version = "0.1.41", features = ["log"] }
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
 uuid = { version = "1.16.0", features = ["v4"] }
+bb8 = "0.8.5"
+bb8-redis = "0.17.0"
+redis = "0.27.2"
+sqlx = {version = "0.8.6",features = ["runtime-tokio-rustls", "mysql", "chrono", "json"]}

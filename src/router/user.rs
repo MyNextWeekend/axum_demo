@@ -1,0 +1,45 @@
+use crate::{AppState, Error, Resp, Result};
+use axum::extract::State;
+use rand::Rng;
+use serde::Serialize;
+
+pub async fn create_user(State(state): State<AppState>) -> Result<User> {
+    let number = {
+        let mut rng = rand::rng();
+        rng.random_range(1..=3)
+    };
+
+    tracing::info!("Generated random number: {}", number);
+
+    let result = sqlx::query("select * from user where id = ?")
+        .bind(&number)
+        .fetch_one(&state.db)
+        .await.map_err(|e|{
+            tracing::error!("Database query error: {}", e);
+            Error::DatabaseError(e.to_string())
+        })?;
+    tracing::info!("Database query result: {:?}", result);
+
+    if number % 5 == 0 {
+        return Err(Error::NotFound);
+    }
+    if number % 3 == 0 {
+        return Err(Error::Unauthorized);
+    }
+    if number % 2 == 0 {
+        return Err(Error::DatabaseError("too long".to_owned()));
+    }
+    let user = User {
+        id: 1337,
+        username: "test_user".to_string(),
+    };
+
+    tracing::info!("User created: {:?}", &user);
+    Ok(Resp::success(user))
+}
+
+#[derive(Debug, Serialize)]
+pub struct User {
+    id: u64,
+    username: String,
+}
