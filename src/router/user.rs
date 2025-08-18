@@ -1,24 +1,33 @@
 use crate::{AppState, Error, Resp, Result};
 use axum::extract::State;
 use rand::Rng;
+use redis::AsyncCommands;
 use serde::Serialize;
 
 pub async fn create_user(State(state): State<AppState>) -> Result<User> {
-    let number = {
-        let mut rng = rand::rng();
-        rng.random_range(1..=3)
-    };
+    let number = rand::rng().random_range(1..=3);
 
     tracing::info!("Generated random number: {}", number);
 
     let result = sqlx::query("select * from user where id = ?")
         .bind(&number)
         .fetch_one(&state.db)
-        .await.map_err(|e|{
+        .await
+        .map_err(|e| {
             tracing::error!("Database query error: {}", e);
             Error::DatabaseError(e.to_string())
         })?;
     tracing::info!("Database query result: {:?}", result);
+    let mut conn = state.redis.get().await.map_err(|e| {
+        tracing::error!("Redis connection error: {}", e);
+        Error::DatabaseError(e.to_string())
+    })?;
+    conn.set_ex::<_, _, ()>("foo", "bar", 600)
+        .await
+        .map_err(|e| {
+            tracing::error!("Redis set error: {}", e);
+            Error::DatabaseError(e.to_string())
+        })?;
 
     if number % 5 == 0 {
         return Err(Error::NotFound);

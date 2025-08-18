@@ -25,7 +25,7 @@ impl AppState {
         {
             // 启动前 ping redis
             let mut conn = redis_pool.get().await.unwrap();
-            conn.set::<&str, &str, ()>("foo", "bar").await.unwrap();
+            conn.set_ex::<_, _, ()>("foo", "bar", 10).await.unwrap();
             let result: String = conn.get("foo").await.unwrap();
             assert_eq!(result, "bar");
         }
