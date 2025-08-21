@@ -2,7 +2,7 @@ mod core;
 mod error;
 mod router;
 
-use axum::{Router, middleware, routing::get};
+use axum::{Router, middleware};
 use core::state::AppState;
 use error::{Error, Resp, Result};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -19,8 +19,13 @@ async fn main() {
 
     // 初始化路由
     let app = Router::new()
-        .route("/", get(router::hello::hello_world))
-        .route("/users", get(router::user::create_user))
+        // 使用 nest 方法将路由嵌套
+        .nest(
+            "/v1",
+            router::hello::hello_router()
+                // 合并用户路由
+                .merge(router::user::user_router()),
+        )
         .layer(middleware::from_fn(core::middleware::log_middleware))
         .with_state(state);
 
