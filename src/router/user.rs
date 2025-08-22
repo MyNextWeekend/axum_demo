@@ -3,6 +3,7 @@ use axum::extract::State;
 use rand::Rng;
 use redis::AsyncCommands;
 use serde::Serialize;
+use tracing::info;
 
 pub fn init() -> axum::Router<AppState> {
     axum::Router::new().route("/user/all", axum::routing::get(create_user))
@@ -11,7 +12,7 @@ pub fn init() -> axum::Router<AppState> {
 async fn create_user(State(state): State<AppState>) -> Result<User> {
     let number = rand::rng().random_range(1..=3);
 
-    tracing::info!("Generated random number: {}", number);
+    info!("Generated random number: {}", number);
 
     let result = sqlx::query("select * from user where id = ?")
         .bind(&number)
@@ -21,7 +22,7 @@ async fn create_user(State(state): State<AppState>) -> Result<User> {
             tracing::error!("Database query error: {}", e);
             Error::DatabaseError(e.to_string())
         })?;
-    tracing::info!("Database query result: {:?}", result);
+    info!("Database query result: {:?}", result);
     let mut conn = state.redis.get().await.map_err(|e| {
         tracing::error!("Redis connection error: {}", e);
         Error::DatabaseError(e.to_string())
@@ -47,7 +48,7 @@ async fn create_user(State(state): State<AppState>) -> Result<User> {
         username: "test_user".to_string(),
     };
 
-    tracing::info!("User created: {:?}", &user);
+    info!("User created: {:?}", &user);
     Ok(Resp::success(user))
 }
 
