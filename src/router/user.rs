@@ -4,7 +4,7 @@ use rand::Rng;
 use redis::AsyncCommands;
 use serde::Serialize;
 
-pub fn user_router() -> axum::Router<AppState> {
+pub fn init() -> axum::Router<AppState> {
     axum::Router::new().route("/user/all", axum::routing::get(create_user))
 }
 

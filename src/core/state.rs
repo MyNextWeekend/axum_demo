@@ -2,6 +2,7 @@ use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::AsyncCommands;
 use sqlx::MySqlPool;
+use tracing::info;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -12,6 +13,8 @@ pub struct AppState {
 
 impl AppState {
     pub async fn new() -> Self {
+        info!("Initializing application state...");
+
         tracing::info!("connecting to mysql");
         let mysql_pool = MySqlPool::connect("mysql://root:123456@localhost/first")
             .await

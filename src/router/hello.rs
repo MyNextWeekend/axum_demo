@@ -2,7 +2,7 @@ use axum::Extension;
 
 use crate::{Resp, Result, core::state::AppState};
 
-pub fn hello_router() -> axum::Router<AppState> {
+pub fn init() -> axum::Router<AppState> {
     axum::Router::new().route("/hello/one", axum::routing::get(hello_world))
 }
 
