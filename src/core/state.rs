@@ -1,7 +1,10 @@
+use std::sync::Arc;
+
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::AsyncCommands;
 use sqlx::MySqlPool;
+use tokio::sync::Mutex;
 use tracing::info;
 
 #[derive(Clone)]
@@ -12,7 +15,7 @@ pub struct AppState {
     pub redis: Pool<RedisConnectionManager>,
 
     // 共享状态示例
-    pub counter: std::sync::Arc<tokio::sync::Mutex<i32>>,
+    pub counter: Arc<Mutex<i32>>,
 }
 
 impl AppState {
@@ -41,7 +44,7 @@ impl AppState {
         AppState {
             db: mysql_pool,
             redis: redis_pool,
-            counter: std::sync::Arc::new(tokio::sync::Mutex::new(0)),
+            counter: Arc::new(Mutex::new(0)),
         }
     }
 }
