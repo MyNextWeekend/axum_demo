@@ -6,6 +6,7 @@ mod scheduler;
 use axum::middleware;
 use core::state::AppState;
 use error::{Error, Resp, Result};
+use std::sync::Arc;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -17,8 +18,11 @@ async fn main() {
         .with(tracing_subscriber::filter::LevelFilter::INFO)
         .init();
 
+    // 初始化配置
+    let config = Arc::new(core::config::AppConfig::init());
+
     // 初始化应用状态
-    let state: AppState = core::state::AppState::new().await;
+    let state: AppState = core::state::AppState::new(config).await;
 
     // 初始化定时任务
     scheduler::init(state.clone()).await;

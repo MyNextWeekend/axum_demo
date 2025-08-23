@@ -7,6 +7,8 @@ use sqlx::MySqlPool;
 use tokio::sync::Mutex;
 use tracing::info;
 
+use crate::core::config::AppConfig;
+
 #[derive(Clone)]
 pub struct AppState {
     // 数据库连接池
@@ -16,10 +18,11 @@ pub struct AppState {
 
     // 共享状态示例
     pub counter: Arc<Mutex<i32>>,
+    pub config: Arc<AppConfig>,
 }
 
 impl AppState {
-    pub async fn new() -> Self {
+    pub async fn new(config: Arc<AppConfig>) -> Self {
         info!("Initializing application state...");
 
         tracing::info!("connecting to mysql");
@@ -45,6 +48,7 @@ impl AppState {
             db: mysql_pool,
             redis: redis_pool,
             counter: Arc::new(Mutex::new(0)),
+            config,
         }
     }
 }

@@ -1,0 +1,15 @@
+[app]
+name = "My Axum App"
+version = "1.0"
+
+[database]
+url = "mysql://root:123456@localhost:3306/test"
+pool_size = 10
+
+[redis]
+url = "redis://127.0.0.1/"
+pool_size = 5
+
+[jobs]
+cron_job1 = "0/5 * * * * *"
+cron_job2 = "0/10 * * * * *"
