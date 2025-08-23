@@ -6,9 +6,13 @@ use tracing::info;
 
 #[derive(Clone)]
 pub struct AppState {
+    // 数据库连接池
     pub db: MySqlPool,
+    // Redis 连接池
     pub redis: Pool<RedisConnectionManager>,
-    // pub kafka: Arc<KafkaProducer>, // 比如 rdkafka
+
+    // 共享状态示例
+    pub counter: std::sync::Arc<tokio::sync::Mutex<i32>>,
 }
 
 impl AppState {
@@ -37,6 +41,7 @@ impl AppState {
         AppState {
             db: mysql_pool,
             redis: redis_pool,
+            counter: std::sync::Arc::new(tokio::sync::Mutex::new(0)),
         }
     }
 }

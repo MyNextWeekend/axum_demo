@@ -1,6 +1,7 @@
 mod core;
 mod error;
 mod router;
+mod scheduler;
 
 use axum::middleware;
 use core::state::AppState;
@@ -18,6 +19,9 @@ async fn main() {
 
     // 初始化应用状态
     let state: AppState = core::state::AppState::new().await;
+
+    // 初始化定时任务
+    scheduler::init(state.clone()).await;
 
     // 初始化路由
     let app = router::init()
