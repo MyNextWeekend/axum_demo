@@ -3,7 +3,7 @@ name = "My Axum App"
 version = "1.0"
 
 [database]
-url = "mysql://root:123456@localhost:3306/test"
+url = "mysql://root:123456@localhost:3306/first"
 pool_size = 10
 
 [redis]

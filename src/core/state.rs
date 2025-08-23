@@ -3,7 +3,7 @@ use std::sync::Arc;
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
 use redis::AsyncCommands;
-use sqlx::MySqlPool;
+use sqlx::{MySqlPool, mysql::MySqlPoolOptions};
 use tokio::sync::Mutex;
 use tracing::info;
 
@@ -26,15 +26,21 @@ impl AppState {
         info!("Initializing application state...");
 
         tracing::info!("connecting to mysql");
-        let mysql_pool = MySqlPool::connect("mysql://root:123456@localhost/first")
+        let mysql_pool = MySqlPoolOptions::new()
+            .max_connections(config.database.pool_size as u32)
+            .connect(&config.database.url)
             .await
             .unwrap();
         tracing::info!("successfully connected to mysql");
 
         tracing::info!("connecting to redis");
-        let manager = RedisConnectionManager::new("redis://localhost").unwrap();
-        let redis_pool = bb8::Pool::builder().build(manager).await.unwrap();
-
+        let manager = RedisConnectionManager::new(config.redis.url.clone()).unwrap();
+        let redis_pool = bb8::Pool::builder()
+            .max_size(config.redis.pool_size)
+            .build(manager)
+            .await
+            .unwrap();
+        
         {
             // 启动前 ping redis
             let mut conn = redis_pool.get().await.unwrap();
