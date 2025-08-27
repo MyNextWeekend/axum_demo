@@ -1,10 +1,8 @@
 mod core;
-mod dao;
 mod error;
 mod router;
 mod scheduler;
 
-use axum::middleware;
 use core::state::AppState;
 use error::{Error, Resp, Result};
 use std::sync::Arc;
@@ -30,9 +28,7 @@ async fn main() {
     scheduler::init(state.clone()).await;
 
     // 初始化路由
-    let app = router::init()
-        .layer(middleware::from_fn(core::middleware::log_middleware))
-        .with_state(state);
+    let app = router::init(state);
 
     // 启动 HTTP 服务器
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();

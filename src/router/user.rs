@@ -5,11 +5,7 @@ use redis::AsyncCommands;
 use serde::Serialize;
 use tracing::info;
 
-pub fn init() -> axum::Router<AppState> {
-    axum::Router::new().route("/user/all", axum::routing::get(create_user))
-}
-
-async fn create_user(State(state): State<AppState>) -> Result<User> {
+pub async fn create_user(State(state): State<AppState>) -> Result<User> {
     let number = rand::rng().random_range(1..=3);
 
     info!("Generated random number: {}", number);
