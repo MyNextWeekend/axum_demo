@@ -3,8 +3,8 @@ use tracing::info;
 
 use crate::{AppState, core};
 
-pub(crate) mod hello;
-pub(crate) mod user;
+mod hello;
+mod user;
 
 pub fn init(state: AppState) -> Router {
     info!("Initializing router...");
