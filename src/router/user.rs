@@ -1,4 +1,4 @@
-use crate::{AppState, Error, Resp, Result};
+use crate::{AppState, Error, Result};
 use axum::extract::State;
 use rand::Rng;
 use redis::AsyncCommands;
@@ -45,7 +45,7 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
     };
 
     info!("User created: {:?}", &user);
-    Ok(Resp::success(user))
+    Ok(user.into())
 }
 
 #[derive(Debug, Serialize)]

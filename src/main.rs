@@ -4,7 +4,7 @@ mod router;
 mod scheduler;
 
 use core::state::AppState;
-use error::{Error, Resp, Result};
+use error::{Error, Result};
 use std::sync::Arc;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};

@@ -13,6 +13,7 @@ pub(crate) type Result<T> = std::result::Result<Resp<T>, Error>;
 pub(crate) struct Resp<T> {
     code: u32,
     msg: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     data: Option<T>,
 }
 
@@ -36,10 +37,13 @@ impl<T> Resp<T> {
     }
 }
 
-impl<T> IntoResponse for Resp<T>
-where
-    T: Serialize,
-{
+impl<T: Serialize> From<T> for Resp<T> {
+    fn from(data: T) -> Self {
+        Resp::success(data)
+    }
+}
+
+impl<T: Serialize> IntoResponse for Resp<T> {
     fn into_response(self) -> Response {
         (StatusCode::OK, Json(self)).into_response()
     }
@@ -56,15 +60,19 @@ pub(crate) enum Error {
     DatabaseError(String),
 }
 
+impl Error {
+    fn code(&self) -> u32 {
+        match self {
+            Error::NotFound => 404,
+            Error::Unauthorized => 401,
+            Error::DatabaseError(_) => 500,
+        }
+    }
+}
+
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        // 区分不同错误的业务 code 与 HTTP status
-        let (code, message) = match self {
-            Error::NotFound => (404, self.to_string()),
-            Error::Unauthorized => (401, self.to_string()),
-            Error::DatabaseError(_) => (500, self.to_string()),
-        };
         // 构造统一错误响应
-        Resp::<()>::error(code, message).into_response()
+        Resp::<()>::error(self.code(), self.to_string()).into_response()
     }
 }
