@@ -1,4 +1,5 @@
 mod core;
+mod dao;
 mod error;
 mod router;
 mod scheduler;
@@ -23,6 +24,7 @@ async fn main() {
 
     // 初始化应用状态
     let state: AppState = core::state::AppState::new(config).await;
+    let addr = state.config.app.addr.clone();
 
     // 初始化定时任务
     scheduler::init(state.clone()).await;
@@ -33,7 +35,7 @@ async fn main() {
         .with_state(state);
 
     // 启动 HTTP 服务器
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     info!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }

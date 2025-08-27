@@ -6,6 +6,7 @@ use tracing::info;
 pub struct AppInfo {
     pub name: String,
     pub version: String,
+    pub addr: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

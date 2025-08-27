@@ -1,6 +1,7 @@
 [app]
 name = "My Axum App"
 version = "1.0"
+addr = "0.0.0.0:8080"
 
 [database]
 url = "mysql://root:123456@localhost:3306/first"
