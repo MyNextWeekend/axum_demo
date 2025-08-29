@@ -25,15 +25,15 @@ impl AppState {
     pub async fn new(config: Arc<AppConfig>) -> Self {
         info!("Initializing application state...");
 
-        tracing::info!("connecting to mysql");
+        info!("connecting to mysql");
         let mysql_pool = MySqlPoolOptions::new()
             .max_connections(config.database.pool_size as u32)
             .connect(&config.database.url)
             .await
             .unwrap();
-        tracing::info!("successfully connected to mysql");
+        info!("successfully connected to mysql");
 
-        tracing::info!("connecting to redis");
+        info!("connecting to redis");
         let manager = RedisConnectionManager::new(config.redis.url.clone()).unwrap();
         let redis_pool = bb8::Pool::builder()
             .max_size(config.redis.pool_size)
@@ -48,7 +48,7 @@ impl AppState {
             let result: String = conn.get("foo").await.unwrap();
             assert_eq!(result, "bar");
         }
-        tracing::info!("successfully connected to redis and pinged it");
+        info!("successfully connected to redis and pinged it");
 
         AppState {
             db: mysql_pool,

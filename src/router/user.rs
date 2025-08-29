@@ -14,21 +14,17 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
         .bind(&number)
         .fetch_one(&state.db)
         .await
-        .map_err(|e| {
-            tracing::error!("Database query error: {}", e);
-            Error::DatabaseError(e.to_string())
-        })?;
+        .map_err(|e| Error::DatabaseError(e.to_string()))?;
     info!("Database query result: {:?}", result);
-    let mut conn = state.redis.get().await.map_err(|e| {
-        tracing::error!("Redis connection error: {}", e);
-        Error::DatabaseError(e.to_string())
-    })?;
+
+    let mut conn = state
+        .redis
+        .get()
+        .await
+        .map_err(|e| Error::RedisError(e.to_string()))?;
     conn.set_ex::<_, _, ()>("foo", "bar", 600)
         .await
-        .map_err(|e| {
-            tracing::error!("Redis set error: {}", e);
-            Error::DatabaseError(e.to_string())
-        })?;
+        .map_err(|e| Error::RedisError(e.to_string()))?;
     let user = User {
         id: 1337,
         username: "test_user".to_string(),

@@ -29,16 +29,21 @@ impl FromRequestParts<AppState> for UserInfo {
                 .ok_or(Error::NotLogin)?;
 
             // 2. 从 Redis 获取 user_info
-            let mut conn =
-                state.redis.get().await.map_err(|_| {
-                    Error::DatabaseError("Failed to get Redis connection".to_string())
-                })?;
+            let mut conn = state
+                .redis
+                .get()
+                .await
+                .map_err(|e| Error::RedisError(e.to_string()))?;
 
             let key = format!("session:{}", token);
-            let user_json: String = conn.get(&key).await.map_err(|_| (Error::Unauthorized))?;
+            let user_json: String = conn
+                .get(&key)
+                .await
+                .map_err(|e| (Error::RedisError(e.to_string())))?;
 
             // 3. 解析 user_info
-            let user = serde_json::from_str(&user_json).map_err(|_| Error::Unauthorized)?;
+            let user = serde_json::from_str(&user_json)
+                .map_err(|e| Error::Unknown(format!("转换 user 失败:{}", e)))?;
 
             Ok(user)
         })

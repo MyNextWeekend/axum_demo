@@ -1,4 +1,7 @@
-use axum::{middleware, routing::{get, post}, Router};
+use axum::{
+    Router, middleware,
+    routing::{get, post},
+};
 use tracing::info;
 
 use crate::{AppState, core};
