@@ -22,7 +22,7 @@ async fn main() {
     let config = Arc::new(core::config::AppConfig::init());
 
     // 初始化应用状态
-    let state: AppState = AppState::new(config).await;
+    let state: AppState = AppState::new(config).await.unwrap();
     let addr = state.config.app.addr.clone();
 
     // 初始化定时任务

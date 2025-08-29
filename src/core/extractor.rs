@@ -3,7 +3,6 @@ use axum::{
     extract::FromRequestParts,
     http::{header, request::Parts},
 };
-use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
