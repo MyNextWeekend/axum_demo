@@ -1,13 +1,12 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use bb8::Pool;
 use bb8_redis::RedisConnectionManager;
-use redis::AsyncCommands;
 use sqlx::{MySqlPool, mysql::MySqlPoolOptions};
 use tokio::sync::Mutex;
 use tracing::info;
 
-use crate::core::config::AppConfig;
+use crate::{core::config::AppConfig, utils::RedisUtil};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -40,13 +39,16 @@ impl AppState {
             .build(manager)
             .await
             .unwrap();
-        
+
         {
             // 启动前 ping redis
-            let mut conn = redis_pool.get().await.unwrap();
-            conn.set_ex::<_, _, ()>("foo", "bar", 10).await.unwrap();
-            let result: String = conn.get("foo").await.unwrap();
-            assert_eq!(result, "bar");
+            let redis = RedisUtil::new(redis_pool.clone());
+            redis
+                .set_with_expire("foo", "bar", Duration::from_secs(10))
+                .await
+                .unwrap();
+            let result: Option<String> = redis.get("foo").await.unwrap();
+            assert_eq!(result, Some("bar".to_string()));
         }
         info!("successfully connected to redis and pinged it");
 

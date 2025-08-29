@@ -71,9 +71,12 @@ pub enum Error {
     #[error("数据库错误: {0}")]
     DatabaseError(String),
 
+    #[error("BB8 池错误: {0}")]
+    RedisPoolError(#[from] bb8::RunError<redis::RedisError>),
+
     /// redis 操作失败
-    #[error("数据库错误: {0}")]
-    RedisError(String),
+    #[error("redis 错误: {0}")]
+    RedisError(#[from] redis::RedisError),
 
     /// 外部 API 调用失败
     #[error("外部服务调用失败: {0}")]
@@ -109,6 +112,7 @@ impl Error {
             Error::NotLogin => 1003,
             Error::Unauthorized => 1004,
             Error::DatabaseError(_) => 1005,
+            Error::RedisPoolError(_) => 1006,
             Error::RedisError(_) => 1006,
             Error::ExternalServiceError(_) => 10010076,
             Error::NetworkError(_) => 10010087,

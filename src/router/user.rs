@@ -1,7 +1,8 @@
-use crate::{AppState, Error, Result};
+use std::time::Duration;
+
+use crate::{AppState, Error, Result, utils::RedisUtil};
 use axum::extract::State;
 use rand::Rng;
-use redis::AsyncCommands;
 use serde::Serialize;
 use tracing::info;
 
@@ -17,14 +18,14 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
         .map_err(|e| Error::DatabaseError(e.to_string()))?;
     info!("Database query result: {:?}", result);
 
-    let mut conn = state
-        .redis
-        .get()
-        .await
-        .map_err(|e| Error::RedisError(e.to_string()))?;
-    conn.set_ex::<_, _, ()>("foo", "bar", 600)
-        .await
-        .map_err(|e| Error::RedisError(e.to_string()))?;
+    // 操作 redis
+    let redis = RedisUtil::new(state.redis.clone());
+    redis
+        .set_with_expire("hello", "world", Duration::from_millis(2))
+        .await?;
+    let val: Option<String> = redis.get("hello").await?;
+    info!("Redis get 'hello': {:?}", val);
+
     let user = User {
         id: 1337,
         username: "test_user".to_string(),

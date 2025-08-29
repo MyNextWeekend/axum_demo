@@ -2,6 +2,7 @@ mod core;
 mod error;
 mod router;
 mod scheduler;
+mod utils;
 
 use core::state::AppState;
 use error::{Error, Result};

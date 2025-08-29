@@ -1,4 +1,4 @@
-use crate::{AppState, Error};
+use crate::{AppState, Error, utils::RedisUtil};
 use axum::{
     extract::FromRequestParts,
     http::{header, request::Parts},
@@ -29,20 +29,12 @@ impl FromRequestParts<AppState> for UserInfo {
                 .ok_or(Error::NotLogin)?;
 
             // 2. 从 Redis 获取 user_info
-            let mut conn = state
-                .redis
-                .get()
-                .await
-                .map_err(|e| Error::RedisError(e.to_string()))?;
-
             let key = format!("session:{}", token);
-            let user_json: String = conn
-                .get(&key)
-                .await
-                .map_err(|e| (Error::RedisError(e.to_string())))?;
+            let redis = RedisUtil::new(state.redis.clone());
+            let value = redis.get::<String>(&key).await?.ok_or(Error::NotLogin)?;
 
             // 3. 解析 user_info
-            let user = serde_json::from_str(&user_json)
+            let user = serde_json::from_str(&value)
                 .map_err(|e| Error::Unknown(format!("转换 user 失败:{}", e)))?;
 
             Ok(user)
