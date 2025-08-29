@@ -43,8 +43,7 @@ impl AppState {
         let pool = MySqlPoolOptions::new()
             .max_connections(config.database.pool_size as u32)
             .connect(&config.database.url)
-            .await
-            .map_err(|e| Error::DatabaseError(e.to_string()))?;
+            .await?;
         info!("Successfully connected to MySQL");
         Ok(pool)
     }

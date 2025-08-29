@@ -69,7 +69,7 @@ pub enum Error {
 
     /// 数据库操作失败
     #[error("数据库错误: {0}")]
-    DatabaseError(String),
+    DatabaseError(#[from] sqlx::Error),
 
     #[error("BB8 池错误: {0}")]
     RedisPoolError(#[from] bb8::RunError<redis::RedisError>),

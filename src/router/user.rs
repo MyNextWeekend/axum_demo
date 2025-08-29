@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{AppState, Error, Result, utils::RedisUtil};
+use crate::{AppState, Result, utils::RedisUtil};
 use axum::extract::State;
 use rand::Rng;
 use serde::Serialize;
@@ -14,8 +14,7 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
     let result = sqlx::query("select * from user where id = ?")
         .bind(&number)
         .fetch_one(&state.db)
-        .await
-        .map_err(|e| Error::DatabaseError(e.to_string()))?;
+        .await?;
     info!("Database query result: {:?}", result);
 
     // 操作 redis
