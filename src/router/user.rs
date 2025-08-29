@@ -29,21 +29,10 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
             tracing::error!("Redis set error: {}", e);
             Error::DatabaseError(e.to_string())
         })?;
-
-    if number % 5 == 0 {
-        return Err(Error::NotFound);
-    }
-    if number % 3 == 0 {
-        return Err(Error::Unauthorized);
-    }
-    if number % 2 == 0 {
-        return Err(Error::DatabaseError("too long".to_owned()));
-    }
     let user = User {
         id: 1337,
         username: "test_user".to_string(),
     };
-
     info!("User created: {:?}", &user);
     Ok(user.into())
 }

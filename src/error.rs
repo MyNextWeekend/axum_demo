@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// 统一的响应格式
-pub(crate) type Result<T> = std::result::Result<Resp<T>, Error>;
+pub type Result<T> = std::result::Result<Resp<T>, Error>;
 
 #[derive(Deserialize, Serialize)]
-pub(crate) struct Resp<T> {
+pub struct Resp<T> {
     code: u32,
     msg: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,21 +51,23 @@ impl<T: Serialize> IntoResponse for Resp<T> {
 
 /// 业务错误枚举
 #[derive(Error, Debug)]
-pub(crate) enum Error {
-    #[error("not found")]
-    NotFound,
-    #[error("unauthorized")]
+pub enum Error {
+    #[error("未查询到相关数据:{0}")]
+    NotFound(String),
+    #[error("未登陆")]
+    NotLogin,
+    #[error("权限不足")]
     Unauthorized,
-    #[error("database error: {0}")]
+    #[error("服务内部异常")]
     DatabaseError(String),
 }
 
 impl Error {
     fn code(&self) -> u32 {
         match self {
-            Error::NotFound => 404,
-            Error::Unauthorized => 401,
-            Error::DatabaseError(_) => 500,
+            Error::NotFound(_) => 1004,
+            Error::Unauthorized => 1002,
+            _ => 1001,
         }
     }
 }

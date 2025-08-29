@@ -1,4 +1,4 @@
-use axum::{Router, middleware, routing::get};
+use axum::{middleware, routing::{get, post}, Router};
 use tracing::info;
 
 use crate::{AppState, core};
@@ -9,7 +9,9 @@ mod user;
 pub fn init(state: AppState) -> Router {
     info!("Initializing router...");
     // 公开路由
-    let public_routes = axum::Router::new().route("/hello/one", get(hello::hello_world));
+    let public_routes = axum::Router::new()
+        .route("/hello/one", get(hello::hello_world))
+        .route("/hello/two", post(hello::hello_extract));
 
     // 管理员路由，套用 一些 中间件
     let admin_routes = axum::Router::new().route("/user/all", get(user::create_user));
