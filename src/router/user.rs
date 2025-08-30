@@ -3,7 +3,7 @@ use std::time::Duration;
 use crate::{AppState, Result, utils::RedisUtil};
 use axum::{Json, extract::State};
 use rand::Rng;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use tracing::info;
 use validator::Validate;
@@ -41,7 +41,8 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
     Ok(user.into())
 }
 
-#[derive(serde::Deserialize, Debug, Clone, Validate)]
+#[derive(Serialize, Deserialize, Debug, Validate)]
+#[serde(rename_all = "camelCase")]
 pub struct GetAllUsersParams {
     #[validate(range(min = 1, message = "页码必须大于等于 1"))]
     page: u64,
