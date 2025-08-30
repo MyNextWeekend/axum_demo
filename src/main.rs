@@ -1,5 +1,7 @@
 mod core;
+mod dao;
 mod error;
+mod model;
 mod router;
 mod scheduler;
 mod utils;
