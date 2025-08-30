@@ -53,7 +53,7 @@ impl<T: Serialize> IntoResponse for Resp<T> {
 pub enum Error {
     /// 请求参数有误
     #[error("参数错误: {0}")]
-    InvalidParameter(String),
+    InvalidParameter(#[from] validator::ValidationErrors),
 
     /// 未查询到相关数据
     #[error("未查询到相关数据: {0}")]
@@ -140,9 +140,9 @@ impl Error {
     fn expose(&self) -> bool {
         matches!(
             self,
-            Error::DatabaseError(_)
-                | Error::RedisError(_)
-                | Error::NotFound(_)
+            Error::InvalidParameter(_)
+                | Error::Unauthorized
+                | Error::NotLogin
                 | Error::AlreadyExists(_)
                 | Error::InvalidState(_)
         )

@@ -17,7 +17,9 @@ pub fn init(state: AppState) -> Router {
         .route("/hello/two", post(hello::hello_extract));
 
     // 管理员路由，套用 一些 中间件
-    let admin_routes = axum::Router::new().route("/user/all", get(user::create_user));
+    let admin_routes = axum::Router::new()
+        .route("/user/add", get(user::create_user))
+        .route("/user/all", post(user::get_all_users));
 
     // 合并公开和管理员路由
     Router::new()
