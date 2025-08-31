@@ -10,7 +10,7 @@ use std::{
     time::Duration,
 };
 use tokio::time::sleep;
-use tracing::info;
+use tracing::{Instrument, info};
 use uuid::Uuid;
 
 pub struct RedisUtil {
@@ -113,28 +113,34 @@ impl RedisLock {
             let flag_clone = auto_renew_flag.clone();
             let interval = ttl_ms / 2; // 半 TTL 续期一次
 
-            tokio::spawn(async move {
-                while flag_clone.load(Ordering::Relaxed) {
-                    info!("续期redis锁: {}={}", &key_clone, &token_clone);
-                    if let Ok(mut conn) = pool_clone.get().await {
-                        let script = r#"
+            // 获取父 span（当前 acquire 的 span）
+            let parent_span = tracing::Span::current();
+
+            tokio::spawn(
+                async move {
+                    while flag_clone.load(Ordering::Relaxed) {
+                        info!("续期redis锁: {}={}", &key_clone, &token_clone);
+                        if let Ok(mut conn) = pool_clone.get().await {
+                            let script = r#"
                             if redis.call("get", KEYS[1]) == ARGV[1] then
                                 return redis.call("pexpire", KEYS[1], ARGV[2])
                             else
                                 return 0
                             end
                         "#;
-                        let _: i32 = Script::new(script)
-                            .key(&key_clone)
-                            .arg(&token_clone)
-                            .arg(ttl_ms)
-                            .invoke_async(&mut *conn)
-                            .await
-                            .unwrap_or(0);
+                            let _: i32 = Script::new(script)
+                                .key(&key_clone)
+                                .arg(&token_clone)
+                                .arg(ttl_ms)
+                                .invoke_async(&mut *conn)
+                                .await
+                                .unwrap_or(0);
+                        }
+                        sleep(Duration::from_millis(interval as u64)).await;
                     }
-                    sleep(Duration::from_millis(interval as u64)).await;
                 }
-            });
+                .instrument(parent_span),
+            );
         }
 
         Ok(Self {
