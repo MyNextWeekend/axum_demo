@@ -17,7 +17,7 @@ pub const REQUEST_TIMEOUT_SECS: u64 = 10; // 请求超时秒数
 /// ==============================
 /// 安全 / 认证相关
 /// ==============================
-pub const EXPIRATION_SECS: u64 = 3600; // 过期时间
+pub const EXPIRATION_SECS: u64 = 60 * 60; // 过期时间 秒
 pub const MAX_LOGIN_ATTEMPTS: u32 = 5; // 最大登录失败次数
 
 /// ==============================

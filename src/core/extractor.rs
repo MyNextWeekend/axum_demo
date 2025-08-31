@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{AppState, Error, model::first::User, utils::RedisUtil};
+use crate::{core::constant, model::first::User, utils::RedisUtil, AppState, Error};
 use axum::{extract::FromRequestParts, http::request::Parts};
 use serde::{Deserialize, Serialize};
 
@@ -33,7 +33,7 @@ impl UserInfo {
             .set_with_expire(
                 &self.token,
                 serde_json::to_string(&self.user_db).unwrap(),
-                Duration::from_secs(60 * 30),
+                Duration::from_secs(constant::EXPIRATION_SECS),
             )
             .await?;
         Ok(())

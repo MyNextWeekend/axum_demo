@@ -33,7 +33,7 @@ pub async fn user_login(
                 .set_with_expire(
                     &session_key,
                     serde_json::to_string(&u).unwrap(),
-                    Duration::from_secs(60 * 30),
+                    Duration::from_secs(constant::EXPIRATION_SECS),
                 )
                 .await?;
             info!("User login successful: {:?}", payload.username);
