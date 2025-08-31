@@ -8,7 +8,7 @@ url = "mysql://root:123456@localhost:3306/first"
 pool_size = 10
 
 [redis]
-url = "redis://127.0.0.1/"
+url = "redis://127.0.0.1/2"
 pool_size = 5
 
 [jobs]

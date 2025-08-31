@@ -4,6 +4,7 @@ use crate::{AppState, Result, dao::UserDao, model::first::User, utils::RedisUtil
 use axum::{Json, extract::State};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use tokio::time::sleep;
 use tracing::info;
 use validator::Validate;
 
@@ -15,13 +16,22 @@ pub async fn create_user(State(state): State<AppState>) -> Result<User> {
     let user = UserDao::query_by_id(&state.db, number).await?;
     info!("Queried user: {:?}", user);
 
-    // 操作 redis
     let redis = RedisUtil::new(state.redis.clone());
-    redis
-        .set_with_expire("hello", "world", Duration::from_millis(2))
-        .await?;
-    let val: Option<String> = redis.get("hello").await?;
-    info!("Redis get 'hello': {:?}", val);
+    {
+        let key = "sample_key";
+        // 操作 redis 锁
+        let lock = redis
+            .acquire_lock(&key, Duration::from_secs(10), true)
+            .await?;
+
+        // 模拟一些工作
+        info!("working...");
+        sleep(Duration::from_secs(50)).await;
+        info!("Work done, releasing lock...");
+
+        // 超出作用域之后自动释放或者手动释放
+        lock.release().await;
+    }
 
     let user = user.ok_or_else(|| crate::Error::NotFound("User not found".into()))?;
     info!("User created: {:?}", &user);

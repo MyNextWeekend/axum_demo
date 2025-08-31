@@ -1,4 +1,4 @@
 mod redis;
 
 
-pub use redis::RedisUtil;
+pub use redis::{RedisUtil, RedisLock};
