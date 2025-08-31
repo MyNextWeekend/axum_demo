@@ -13,9 +13,8 @@ pub struct UserInfo {
 impl UserInfo {
     pub async fn from_token(token: &str, state: &AppState) -> Result<Self, Error> {
         // 1. 从 Redis 获取用户信息
-        let key = format!("session:{}", token);
         let redis = RedisUtil::new(state.redis.clone());
-        let value = redis.get::<String>(&key).await?.ok_or(Error::NotLogin)?;
+        let value = redis.get::<String>(&token).await?.ok_or(Error::NotLogin)?;
 
         // 2. 解析 user_info
         let user: User = serde_json::from_str(&value)

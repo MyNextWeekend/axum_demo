@@ -8,7 +8,7 @@ use tracing::{Instrument, info_span};
 use uuid::Uuid;
 
 use crate::{
-    core::{extractor::UserInfo, state::AppState},
+    core::{constant, extractor::UserInfo, state::AppState},
     error::Error,
 };
 
@@ -48,7 +48,7 @@ pub async fn user_middleware(
     // 1. 从请求头提取 token
     let token = req
         .headers()
-        .get("Authorization")
+        .get(constant::AUTH_HEADER)
         .and_then(|h| h.to_str().ok())
         .ok_or(Error::NotLogin)?;
 
