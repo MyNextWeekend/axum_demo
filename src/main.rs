@@ -29,7 +29,7 @@ async fn main() {
     let addr = state.config.app.addr.clone();
 
     // 初始化定时任务
-    scheduler::init(state.clone()).await;
+    scheduler::init(Arc::new(state.clone())).await;
 
     // 初始化路由
     let app = router::init(state);

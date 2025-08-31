@@ -1,13 +1,15 @@
 mod job1;
 mod job2;
 
+use std::sync::Arc;
+
 use tokio_cron_scheduler::{Job, JobScheduler};
 use tracing::info;
 
 use crate::core::state::AppState;
 
 // 汇总所有的定时任务
-fn all_jobs(state: AppState) -> Vec<Job> {
+fn all_jobs(state: Arc<AppState>) -> Vec<Job> {
     vec![
         job1::create_job(state.clone()),
         job2::create_job(state.clone()),
@@ -15,7 +17,7 @@ fn all_jobs(state: AppState) -> Vec<Job> {
 }
 
 // 初始化调度器并添加所有任务
-pub async fn init(state: AppState) {
+pub async fn init(state: Arc<AppState>) {
     info!("Initializing scheduler...");
     let scheduler = JobScheduler::new().await.unwrap();
     let jobs = all_jobs(state);

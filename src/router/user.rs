@@ -1,8 +1,12 @@
 use std::time::Duration;
 
 use crate::{
-    AppState, Result, core::extractor::UserInfo, dao::UserDao, model::first::User,
-    utils::RedisUtil, vo::user_vo::UserQueryResp,
+    AppState, Result,
+    core::{constant, extractor::UserInfo},
+    dao::UserDao,
+    model::first::User,
+    utils::RedisUtil,
+    vo::user_vo::UserQueryResp,
 };
 use axum::{Json, extract::State};
 use tracing::info;
@@ -22,10 +26,9 @@ pub async fn user_login(
         Some(u) if u.password == payload.password => {
             // 生成随机值存放数据库
             let salt = chrono::Local::now().timestamp();
-            // UserDao::update_salt_by_id(&state.db, u.id, &salt.to_string()).await?;
             // 登陆信息存放在 redis 中
             let redis = RedisUtil::new(state.redis.clone());
-            let session_key = format!("session:{}:{}", u.id, salt);
+            let session_key = format!("{}:{}:{}", constant::SESSION_KEY, u.id, salt);
             redis
                 .set_with_expire(
                     &session_key,
