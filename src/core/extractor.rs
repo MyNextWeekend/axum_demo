@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct UserInfo {
     pub user_id: u64,
     pub username: String,
-    pub salt: u32,
+    pub role: u8,
     pub created_at: Option<chrono::NaiveDateTime>,
     pub updated_at: Option<chrono::NaiveDateTime>,
 }

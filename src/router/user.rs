@@ -85,7 +85,7 @@ pub async fn user_create(
     Json(new_user): Json<crate::vo::user_vo::UserCreateReq>,
 ) -> Result<u64> {
     new_user.validate()?;
-    if user.salt != 0 {
+    if user.role != 0 {
         return Err(crate::Error::Unauthorized("无权限操作".into()));
     }
     info!("Create user attempt by: {:?}", user.username);
