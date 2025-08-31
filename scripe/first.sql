@@ -187,6 +187,7 @@ CREATE TABLE `user` (
   `password` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码',
   `salt` varchar(32) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '加盐值',
   `role` int NOT NULL COMMENT '角色',
+  `enable_flag` tinyint(1) NOT NULL DEFAULT '1' COMMENT '启用标志(0-禁用,1-启用)',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)

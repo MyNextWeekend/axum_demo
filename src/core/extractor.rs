@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{AppState, Error, utils::RedisUtil};
 use axum::{
     extract::FromRequestParts,
@@ -9,6 +11,9 @@ use serde::{Deserialize, Serialize};
 pub struct UserInfo {
     pub user_id: u64,
     pub username: String,
+    pub salt: u32,
+    pub created_at: Option<chrono::NaiveDateTime>,
+    pub updated_at: Option<chrono::NaiveDateTime>,
 }
 
 impl FromRequestParts<AppState> for UserInfo {
@@ -35,6 +40,11 @@ impl FromRequestParts<AppState> for UserInfo {
             // 3. 解析 user_info
             let user = serde_json::from_str(&value)
                 .map_err(|e| Error::Unknown(format!("转换 user 失败:{}", e)))?;
+
+            // 4. 刷新过期时间
+            redis
+                .set_with_expire(&key, value, Duration::from_secs(60 * 30))
+                .await?;
 
             Ok(user)
         })

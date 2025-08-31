@@ -5,6 +5,7 @@ mod model;
 mod router;
 mod scheduler;
 mod utils;
+mod vo;
 
 use core::state::AppState;
 use error::{Error, Result};

@@ -1,58 +1,107 @@
 use std::time::Duration;
 
-use crate::{AppState, Result, dao::UserDao, model::first::User, utils::RedisUtil};
+use crate::{
+    AppState, Result, core::extractor::UserInfo, dao::UserDao, model::first::User,
+    utils::RedisUtil, vo::user_vo::UserQueryResp,
+};
 use axum::{Json, extract::State};
-use rand::Rng;
-use serde::{Deserialize, Serialize};
-use tokio::time::sleep;
 use tracing::info;
 use validator::Validate;
 
-pub async fn create_user(State(state): State<AppState>) -> Result<User> {
-    let number = rand::rng().random_range(1..=3);
-
-    info!("Generated random number: {}", number);
-
-    let user = UserDao::query_by_id(&state.db, number).await?;
-    info!("Queried user: {:?}", user);
-
-    let redis = RedisUtil::new(state.redis.clone());
-    {
-        let key = "sample_key";
-        // 操作 redis 锁
-        let lock = redis
-            .acquire_lock(&key, Duration::from_secs(10), true)
-            .await?;
-
-        // 模拟一些工作
-        info!("working...");
-        sleep(Duration::from_secs(50)).await;
-        info!("Work done, releasing lock...");
-
-        // 超出作用域之后自动释放或者手动释放
-        lock.release().await;
-    }
-
-    let user = user.ok_or_else(|| crate::Error::NotFound("User not found".into()))?;
-    info!("User created: {:?}", &user);
-    Ok(user.into())
-}
-
-#[derive(Serialize, Deserialize, Debug, Validate)]
-#[serde(rename_all = "camelCase")]
-pub struct GetAllUsersParams {
-    #[validate(range(min = 1, message = "页码必须大于等于 1"))]
-    page: u64,
-    #[validate(range(min = 1, max = 100, message = "每页数量必须在 1 到 100 之间"))]
-    page_size: u64,
-}
-
-pub async fn get_all_users(
+// 用户登录，成功返回 token
+pub async fn user_login(
     State(state): State<AppState>,
-    Json(parm): Json<GetAllUsersParams>,
-) -> Result<Vec<User>> {
+    Json(payload): Json<crate::vo::user_vo::UserLoginReq>,
+) -> Result<crate::vo::user_vo::UserLoginResp> {
+    payload.validate()?;
+    info!("User login attempt: {:?}", payload.username);
+
+    let user = UserDao::query_by_username(&state.db, &payload.username).await?;
+
+    match user {
+        Some(u) if u.password == payload.password => {
+            // 生成随机值存放数据库
+            let salt = chrono::Local::now().timestamp();
+            UserDao::update_salt_by_id(&state.db, u.id, &salt.to_string()).await?;
+            // 登陆信息存放在 redis 中
+            let redis = RedisUtil::new(state.redis.clone());
+            let session_key = format!("session:{}:{}", u.id, salt);
+            redis
+                .set_with_expire(
+                    &session_key,
+                    serde_json::to_string(&u).unwrap(),
+                    Duration::from_secs(60 * 30),
+                )
+                .await?;
+            info!("User login successful: {:?}", payload.username);
+            Ok(crate::vo::user_vo::UserLoginResp {
+                user_id: u.id,
+                token: session_key,
+                username: u.username,
+                role: u.role,
+            }
+            .into())
+        }
+        _ => {
+            info!(
+                "Invalid username or password for user: {}",
+                payload.username
+            );
+            Err(crate::Error::Unauthorized("账号或密码错误".into()))
+        }
+    }
+}
+
+// 用户登出，删除 redis 中的 session
+pub async fn user_logout(State(state): State<AppState>, user: UserInfo) -> Result<String> {
+    info!("User logout attempt: {:?}", user.username);
+    let redis = RedisUtil::new(state.redis.clone());
+    redis.del(&user.username).await?;
+    Ok(format!("Logout successful").into())
+}
+
+// 查询所有用户，返回用户列表
+pub async fn user_query(
+    State(state): State<AppState>,
+    Json(parm): Json<crate::vo::user_vo::UserQueryReq>,
+) -> Result<Vec<UserQueryResp>> {
     parm.validate()?;
     info!("Get all users with params: {:?}", parm);
     let users = UserDao::query(&state.db, parm.page, parm.page_size).await?;
+    let users: Vec<UserQueryResp> = users
+        .iter()
+        .map(|u| UserQueryResp {
+            user_id: u.id,
+            username: u.username.clone(),
+        })
+        .collect();
     Ok(users.into())
+}
+
+// 创建用户，返回新用户 ID
+pub async fn user_create(
+    user: UserInfo,
+    State(state): State<AppState>,
+    Json(new_user): Json<crate::vo::user_vo::UserCreateReq>,
+) -> Result<u64> {
+    new_user.validate()?;
+    if user.salt != 0 {
+        return Err(crate::Error::Unauthorized("无权限操作".into()));
+    }
+    info!("Create user attempt by: {:?}", user.username);
+    let u = UserDao::query_by_username(&state.db, &new_user.username).await?;
+    if u.is_some() {
+        return Err(crate::Error::AlreadyExists("用户名已存在".into()));
+    }
+    let new_user = User {
+        id: 0,
+        username: new_user.username,
+        password: new_user.password,
+        salt: "".to_string(),
+        role: 1,
+        created_at: Some(chrono::Local::now().naive_local()),
+        updated_at: Some(chrono::Local::now().naive_local()),
+    };
+    let new_user_id = UserDao::insert(&state.db, new_user).await?;
+    Ok(new_user_id.into())
 }

@@ -18,8 +18,11 @@ pub fn init(state: AppState) -> Router {
 
     // 管理员路由，套用 一些 中间件
     let admin_routes = axum::Router::new()
-        .route("/user/add", get(user::create_user))
-        .route("/user/all", post(user::get_all_users));
+        // 用户相关路由
+        .route("/user/login", post(user::user_login))
+        .route("/user/logout", post(user::user_logout))
+        .route("/user/create", post(user::user_create))
+        .route("/user/query", post(user::user_query));
 
     // 合并公开和管理员路由
     Router::new()

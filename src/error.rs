@@ -51,21 +51,10 @@ impl<T: Serialize> IntoResponse for Resp<T> {
 /// 业务错误枚举
 #[derive(Error, Debug)]
 pub enum Error {
+    /// ==================== 以下为通用错误 ====================
     /// 请求参数有误
     #[error("参数错误: {0}")]
     InvalidParameter(#[from] validator::ValidationErrors),
-
-    /// 未查询到相关数据
-    #[error("未查询到相关数据: {0}")]
-    NotFound(String),
-
-    /// 未登录或会话过期
-    #[error("未登录")]
-    NotLogin,
-
-    /// 权限不足
-    #[error("权限不足")]
-    Unauthorized,
 
     /// 数据库操作失败
     #[error("数据库错误: {0}")]
@@ -77,6 +66,19 @@ pub enum Error {
     /// redis 操作失败
     #[error("redis 错误: {0}")]
     RedisError(#[from] redis::RedisError),
+
+    /// ==================== 以下为业务相关错误 ====================
+    /// 未查询到相关数据
+    #[error("未查询到相关数据: {0}")]
+    NotFound(String),
+
+    /// 未登录或会话过期
+    #[error("未登录")]
+    NotLogin,
+
+    /// 权限不足
+    #[error("权限不足")]
+    Unauthorized(String),
 
     /// 外部 API 调用失败
     #[error("外部服务调用失败: {0}")]
@@ -110,7 +112,7 @@ impl Error {
             Error::InvalidParameter(_) => 1001,
             Error::NotFound(_) => 1002,
             Error::NotLogin => 1003,
-            Error::Unauthorized => 1004,
+            Error::Unauthorized(_) => 1004,
             Error::DatabaseError(_) => 1005,
             Error::RedisPoolError(_) => 1006,
             Error::RedisError(_) => 1006,
@@ -141,7 +143,7 @@ impl Error {
         matches!(
             self,
             Error::InvalidParameter(_)
-                | Error::Unauthorized
+                | Error::Unauthorized(_)
                 | Error::NotLogin
                 | Error::AlreadyExists(_)
                 | Error::InvalidState(_)
