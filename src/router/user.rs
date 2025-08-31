@@ -55,8 +55,7 @@ pub async fn user_login(
 // 用户登出，删除 redis 中的 session
 pub async fn user_logout(State(state): State<AppState>, user: UserInfo) -> Result<String> {
     info!("User logout attempt: {:?}", user.user_db.username);
-    let redis = RedisUtil::new(state.redis.clone());
-    redis.del(&user.token).await?;
+    user.logout(&state).await?;
     Ok(format!("Logout successful").into())
 }
 
@@ -85,7 +84,7 @@ pub async fn user_create(
     Json(new_user): Json<crate::vo::user_vo::UserCreateReq>,
 ) -> Result<u64> {
     new_user.validate()?;
-    if user.user_db.role != 0 {
+    if user.is_admin() {
         return Err(crate::Error::Unauthorized("无权限操作".into()));
     }
     info!("Create user attempt by: {:?}", user.user_db.username);

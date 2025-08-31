@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserInfo {
-    pub token: String,
+    token: String,
     pub user_db: User,
 }
 
