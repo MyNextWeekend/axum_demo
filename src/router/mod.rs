@@ -22,7 +22,11 @@ pub fn init(state: AppState) -> Router {
         .route("/user/login", post(user::user_login))
         .route("/user/logout", post(user::user_logout))
         .route("/user/create", post(user::user_create))
-        .route("/user/query", post(user::user_query));
+        .route("/user/query", post(user::user_query))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            core::middleware::user_middleware,
+        ));
 
     // 合并公开和管理员路由
     Router::new()

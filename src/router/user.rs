@@ -22,7 +22,7 @@ pub async fn user_login(
         Some(u) if u.password == payload.password => {
             // 生成随机值存放数据库
             let salt = chrono::Local::now().timestamp();
-            UserDao::update_salt_by_id(&state.db, u.id, &salt.to_string()).await?;
+            // UserDao::update_salt_by_id(&state.db, u.id, &salt.to_string()).await?;
             // 登陆信息存放在 redis 中
             let redis = RedisUtil::new(state.redis.clone());
             let session_key = format!("session:{}:{}", u.id, salt);
@@ -54,9 +54,9 @@ pub async fn user_login(
 
 // 用户登出，删除 redis 中的 session
 pub async fn user_logout(State(state): State<AppState>, user: UserInfo) -> Result<String> {
-    info!("User logout attempt: {:?}", user.username);
+    info!("User logout attempt: {:?}", user.user_db.username);
     let redis = RedisUtil::new(state.redis.clone());
-    redis.del(&user.username).await?;
+    redis.del(&user.token).await?;
     Ok(format!("Logout successful").into())
 }
 
@@ -85,10 +85,10 @@ pub async fn user_create(
     Json(new_user): Json<crate::vo::user_vo::UserCreateReq>,
 ) -> Result<u64> {
     new_user.validate()?;
-    if user.role != 0 {
+    if user.user_db.role != 0 {
         return Err(crate::Error::Unauthorized("无权限操作".into()));
     }
-    info!("Create user attempt by: {:?}", user.username);
+    info!("Create user attempt by: {:?}", user.user_db.username);
     let u = UserDao::query_by_username(&state.db, &new_user.username).await?;
     if u.is_some() {
         return Err(crate::Error::AlreadyExists("用户名已存在".into()));

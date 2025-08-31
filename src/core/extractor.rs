@@ -1,19 +1,58 @@
 use std::time::Duration;
 
-use crate::{AppState, Error, utils::RedisUtil};
-use axum::{
-    extract::FromRequestParts,
-    http::{header, request::Parts},
-};
+use crate::{AppState, Error, model::first::User, utils::RedisUtil};
+use axum::{extract::FromRequestParts, http::request::Parts};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserInfo {
-    pub user_id: u64,
-    pub username: String,
-    pub role: u8,
-    pub created_at: Option<chrono::NaiveDateTime>,
-    pub updated_at: Option<chrono::NaiveDateTime>,
+    pub token: String,
+    pub user_db: User,
+}
+
+impl UserInfo {
+    pub async fn from_token(token: &str, state: &AppState) -> Result<Self, Error> {
+        // 1. 从 Redis 获取用户信息
+        let key = format!("session:{}", token);
+        let redis = RedisUtil::new(state.redis.clone());
+        let value = redis.get::<String>(&key).await?.ok_or(Error::NotLogin)?;
+
+        // 2. 解析 user_info
+        let user: User = serde_json::from_str(&value)
+            .map_err(|e| Error::Unknown(format!("转换 user 失败:{}", e)))?;
+        Ok(Self {
+            token: token.to_string(),
+            user_db: user,
+        })
+    }
+
+    /// 刷新会话有效期
+    pub async fn refresh_session(&self, state: &AppState) -> Result<(), Error> {
+        let redis = RedisUtil::new(state.redis.clone());
+        //  刷新过期时间
+        redis
+            .set_with_expire(
+                &self.token,
+                serde_json::to_string(&self.user_db).unwrap(),
+                Duration::from_secs(60 * 30),
+            )
+            .await?;
+        Ok(())
+    }
+
+    /// 检查用户角色是否有权限
+    /// 0 - 管理员 1 - 普通用户
+    /// 返回 true 表示有权限，false 表示无权限
+    pub fn is_admin(&self) -> bool {
+        self.user_db.role == 0
+    }
+
+    /// 强行退出登陆
+    pub async fn logout(&self, state: &AppState) -> Result<(), Error> {
+        let redis = RedisUtil::new(state.redis.clone());
+        redis.del(&self.token).await?;
+        Ok(())
+    }
 }
 
 impl FromRequestParts<AppState> for UserInfo {
@@ -21,32 +60,14 @@ impl FromRequestParts<AppState> for UserInfo {
 
     fn from_request_parts(
         parts: &mut Parts,
-        state: &AppState,
+        _state: &AppState,
     ) -> impl Future<Output = Result<Self, Self::Rejection>> + Send {
-        let state = state.clone();
         Box::pin(async move {
-            // 1. 从 Header 提取 token
-            let token = parts
-                .headers
-                .get(header::AUTHORIZATION)
-                .and_then(|h| h.to_str().ok())
-                .ok_or(Error::NotLogin)?;
-
-            // 2. 从 Redis 获取 user_info
-            let key = format!("session:{}", token);
-            let redis = RedisUtil::new(state.redis.clone());
-            let value = redis.get::<String>(&key).await?.ok_or(Error::NotLogin)?;
-
-            // 3. 解析 user_info
-            let user = serde_json::from_str(&value)
-                .map_err(|e| Error::Unknown(format!("转换 user 失败:{}", e)))?;
-
-            // 4. 刷新过期时间
-            redis
-                .set_with_expire(&key, value, Duration::from_secs(60 * 30))
-                .await?;
-
-            Ok(user)
+            Ok(parts
+                .extensions
+                .get::<UserInfo>()
+                .cloned()
+                .ok_or(Error::NotLogin)?)
         })
     }
 }
