@@ -81,7 +81,7 @@ impl RedisLock {
         expire: Duration,
         auto_renew: bool,
     ) -> Result<Self, Error> {
-        let ttl_ms: usize = expire
+        let ttl_ms: u64 = expire
             .as_millis()
             .try_into()
             .map_err(|e| Error::Unknown(format!("类型转换失败:{}", e)))?;
@@ -105,50 +105,55 @@ impl RedisLock {
         }
         info!("获取redis锁成功: {}", key);
         let auto_renew_flag = Arc::new(AtomicBool::new(true));
+        let lock = Self {
+            pool: pool.clone(),
+            key: key.to_string(),
+            token,
+            auto_renew_flag,
+        };
         // 是否给锁自动续时长
         if auto_renew {
-            let pool_clone = pool.clone();
-            let key_clone = key.to_string();
-            let token_clone = token.clone();
-            let flag_clone = auto_renew_flag.clone();
-            let interval = ttl_ms / 2; // 半 TTL 续期一次
+            lock.auto_renew(ttl_ms).await;
+        }
 
-            // 获取父 span（当前 acquire 的 span）
-            let parent_span = tracing::Span::current();
+        Ok(lock)
+    }
 
-            tokio::spawn(
-                async move {
-                    while flag_clone.load(Ordering::Relaxed) {
-                        info!("续期redis锁: {}={}", &key_clone, &token_clone);
-                        if let Ok(mut conn) = pool_clone.get().await {
-                            let script = r#"
+    /// 自动续期 逻辑
+    async fn auto_renew(&self, ttl_ms: u64) {
+        let pool_clone = self.pool.clone();
+        let key_clone = self.key.to_string();
+        let token_clone = self.token.clone();
+        let flag_clone = self.auto_renew_flag.clone();
+        let interval = ttl_ms / 2; // 半 TTL 续期一次
+
+        // 获取父 span（当前 acquire 的 span）
+        let parent_span = tracing::Span::current();
+        tokio::spawn(
+            async move {
+                while flag_clone.load(Ordering::Relaxed) {
+                    info!("续期redis锁: {}={}", &key_clone, &token_clone);
+                    if let Ok(mut conn) = pool_clone.get().await {
+                        let script = r#"
                             if redis.call("get", KEYS[1]) == ARGV[1] then
                                 return redis.call("pexpire", KEYS[1], ARGV[2])
                             else
                                 return 0
                             end
                         "#;
-                            let _: i32 = Script::new(script)
-                                .key(&key_clone)
-                                .arg(&token_clone)
-                                .arg(ttl_ms)
-                                .invoke_async(&mut *conn)
-                                .await
-                                .unwrap_or(0);
-                        }
-                        sleep(Duration::from_millis(interval as u64)).await;
+                        let _: i32 = Script::new(script)
+                            .key(&key_clone)
+                            .arg(&token_clone)
+                            .arg(ttl_ms)
+                            .invoke_async(&mut *conn)
+                            .await
+                            .unwrap_or(0);
                     }
+                    sleep(Duration::from_millis(interval as u64)).await;
                 }
-                .instrument(parent_span),
-            );
-        }
-
-        Ok(Self {
-            pool: pool.clone(),
-            key: key.to_string(),
-            token,
-            auto_renew_flag,
-        })
+            }
+            .instrument(parent_span),
+        );
     }
 
     pub async fn release(&self) {
