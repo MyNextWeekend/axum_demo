@@ -3,7 +3,7 @@ pub mod first;
 #[cfg(test)]
 mod test_create {
 
-    use std::fmt::{Display, write};
+    use std::fmt::Display;
 
     use heck::ToUpperCamelCase;
     use sqlx::{MySqlPool, Row};
