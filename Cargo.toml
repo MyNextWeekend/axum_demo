@@ -21,4 +21,5 @@ redis = "0.32.5"
 uuid = { version = "1.18.0", features = ["v4"] }
 config = "0.15.15"
 rand = "0.9.2"
+heck = "0.5.0"
 

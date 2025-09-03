@@ -99,8 +99,9 @@ pub async fn user_create(
         id: 0,
         username: new_user.username,
         password: new_user.password,
-        salt: "".to_string(),
+        salt: None,
         role: 1,
+        enable_flag: 1,
         created_at: Some(chrono::Local::now().naive_local()),
         updated_at: Some(chrono::Local::now().naive_local()),
     };

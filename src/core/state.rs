@@ -38,7 +38,7 @@ impl AppState {
         })
     }
 
-    async fn init_mysql(config: &AppConfig) -> Result<MySqlPool, Error> {
+    pub async fn init_mysql(config: &AppConfig) -> Result<MySqlPool, Error> {
         info!("Connecting to MySQL...");
         let pool = MySqlPoolOptions::new()
             .max_connections(config.database.pool_size as u32)

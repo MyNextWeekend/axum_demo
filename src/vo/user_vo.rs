@@ -14,10 +14,10 @@ pub struct UserLoginReq {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserLoginResp {
-    pub user_id: u64,
+    pub user_id: i64,
     pub token: String,
     pub username: String,
-    pub role: u8,
+    pub role: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Validate)]
@@ -32,7 +32,7 @@ pub struct UserQueryReq {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserQueryResp {
-    pub user_id: u64,
+    pub user_id: i64,
     pub username: String,
 }
 
