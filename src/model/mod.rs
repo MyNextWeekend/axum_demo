@@ -2,7 +2,6 @@ pub mod first;
 
 #[cfg(test)]
 mod test_create {
-
     use std::fmt::Display;
 
     use heck::ToUpperCamelCase;
@@ -13,6 +12,37 @@ mod test_create {
     use tokio::{fs, process::Command};
 
     use crate::core::{config::AppConfig, state::AppState};
+
+    /// 自动生成 数据库表 对应的 结构体
+    #[tokio::test]
+    async fn create_model() {
+        // 操作的数据库
+        let database_name = "first";
+        let output_file = format!("src/model/{}.rs", database_name);
+
+        let conf = AppConfig::init();
+        let mysql = AppState::init_mysql(&conf).await.unwrap();
+
+        let datas = TableInfo::from_db(&mysql, database_name).await;
+        // 拼接头部内容，写入文件
+        let table_str = format!(
+            r#"use serde::{{Deserialize, Serialize}}; 
+                {}"#,
+            datas
+                .into_iter()
+                .map(|t| t.to_string())
+                .collect::<Vec<String>>()
+                .join("\n")
+        );
+        fs::write(&output_file, table_str).await.unwrap();
+        // 自动格式化代码
+        Command::new("rustfmt")
+            .arg(&output_file)
+            .status()
+            .await
+            .unwrap();
+    }
+
     #[derive(Serialize, Deserialize, FromRow, Debug)]
     struct TableInfo {
         table_name: String,
@@ -38,22 +68,28 @@ mod test_create {
     }
 
     impl TableInfo {
-        async fn from_db(pool: MySqlPool, database_name: &str) -> Vec<TableInfo> {
+        async fn from_db(pool: &MySqlPool, database_name: &str) -> Vec<TableInfo> {
             let rows = sqlx::query(
-            r#"SELECT CAST(TABLE_NAME AS CHAR) AS TABLE_NAME,TABLE_COMMENT FROM information_schema.tables where table_schema = ?"#,
-            ).bind(&database_name)
-            .fetch_all(&pool)
+                r#"select 
+                        CAST(TABLE_NAME as char) as table_name,
+                        TABLE_COMMENT as table_comment 
+                    FROM information_schema.tables 
+                    where table_schema = ?"#,
+            )
+            .bind(&database_name)
+            .fetch_all(pool)
             .await
             .unwrap();
 
-            let mut result = Vec::new();
+            let mut result = Vec::with_capacity(rows.len());
             for row in rows {
-                let table_name = row.get::<String, _>("TABLE_NAME");
-                let columns = ColumnInfo::from_db(pool.clone(), &database_name, &table_name).await;
+                let table_name = row.get::<String, _>("table_name");
+                let table_comment = row.get::<String, _>("table_comment");
+                let columns = ColumnInfo::from_db(pool, &database_name, &table_name).await;
 
                 result.push(TableInfo {
                     table_name,
-                    table_comment: row.get::<String, _>("TABLE_COMMENT"),
+                    table_comment,
                     columns,
                 });
             }
@@ -80,7 +116,7 @@ mod test_create {
             // 备注 字段 属性
             write!(
                 f,
-                "    pub {}: {}, //  {}\n",
+                "pub {}: {}, //  {}\n",
                 self.column_name, base_type, self.column_comment
             )
         }
@@ -88,28 +124,25 @@ mod test_create {
 
     impl ColumnInfo {
         async fn from_db(
-            pool: MySqlPool,
+            pool: &MySqlPool,
             database_name: &str,
             table_name: &str,
         ) -> Vec<ColumnInfo> {
-            let rows = sqlx::query(
-            r#"select COLUMN_NAME,ORDINAL_POSITION,IS_NULLABLE,CAST(DATA_TYPE AS CHAR) AS DATA_TYPE,CAST(COLUMN_COMMENT AS CHAR) AS COLUMN_COMMENT
+            sqlx::query_as(
+                r#"select 
+                            COLUMN_NAME as column_name,
+                            ORDINAL_POSITION as ordinal_position,
+                            IS_NULLABLE as is_nullable,
+                            CAST(DATA_TYPE as char) as data_type,
+                            CAST(COLUMN_COMMENT as char) as column_comment
                     from information_schema.COLUMNS 
                     where TABLE_SCHEMA = ? and TABLE_NAME = ? "#,
-            ).bind(database_name).bind(table_name)
-            .fetch_all(&pool)
+            )
+            .bind(database_name)
+            .bind(table_name)
+            .fetch_all(pool)
             .await
-            .unwrap();
-
-            rows.into_iter()
-                .map(|row| ColumnInfo {
-                    column_name: row.get::<String, _>("COLUMN_NAME"),
-                    ordinal_position: row.get::<u8, _>("ORDINAL_POSITION"),
-                    is_nullable: row.get::<String, _>("IS_NULLABLE"),
-                    data_type: row.get::<String, _>("DATA_TYPE"),
-                    column_comment: row.get::<String, _>("COLUMN_COMMENT"),
-                })
-                .collect()
+            .unwrap()
         }
 
         fn cover_type(&self) -> &str {
@@ -128,33 +161,5 @@ mod test_create {
                 _ => "String",
             }
         }
-    }
-
-    #[tokio::test]
-    async fn create_model() {
-        let conf = AppConfig::init();
-        let mysql = AppState::init_mysql(&conf).await.unwrap();
-        // 操作的数据库
-        let database_name = "first";
-        let datas = TableInfo::from_db(mysql, database_name).await;
-        // 拼接头部内容，写入文件
-        let table_str = format!(
-            r#"use serde::{{Deserialize, Serialize}}; 
-                {}"#,
-            datas
-                .into_iter()
-                .map(|t| t.to_string())
-                .collect::<Vec<String>>()
-                .join("\n")
-        );
-        fs::write(format!("src/model/{}.rs", database_name), table_str)
-            .await
-            .unwrap();
-        // 自动格式化代码
-        Command::new("rustfmt")
-            .arg(format!("src/model/{}.rs", database_name))
-            .status()
-            .await
-            .expect("Failed to format generated code");
     }
 }
