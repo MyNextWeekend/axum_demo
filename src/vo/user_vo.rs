@@ -20,23 +20,30 @@ pub struct UserLoginResp {
     pub role: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, Validate)]
+#[derive(Deserialize, Debug, Validate)]
 #[serde(rename_all = "camelCase")]
-pub struct UserQueryReq {
-    #[validate(range(min = 1, message = "页码必须大于等于 1"))]
-    pub page: u64,
-    #[validate(range(min = 1, max = 100, message = "每页数量必须在 1 到 100 之间"))]
-    pub page_size: u64,
+pub struct UserFilter {
+    pub name: Option<String>,
+    pub age: Option<u32>,
+}
+#[derive(Serialize, Debug, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct UserInfoResp {
+    pub id: i64,                                   //
+    pub username: String,                          //  账号
+    pub role: i32,                                 //  角色
+    pub created_at: Option<chrono::NaiveDateTime>, //  创建时间
+    pub updated_at: Option<chrono::NaiveDateTime>, //
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UserQueryResp {
+pub struct UserFilterResp {
     pub user_id: i64,
     pub username: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Validate)]
+#[derive(Deserialize, Debug, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct UserCreateReq {
     #[validate(length(min = 3, max = 20, message = "用户名长度必须在3到20个字符之间"))]
@@ -45,4 +52,14 @@ pub struct UserCreateReq {
     pub password: String,
     #[validate(email(message = "邮箱格式不正确"))]
     pub email: String,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct UserUpdateReq {
+    pub id: i64,
+    pub username: Option<String>, //  账号
+    pub password: Option<String>, //  密码
+    pub salt: Option<String>,     //  加盐值
+    pub role: Option<i32>,        //  角色
 }

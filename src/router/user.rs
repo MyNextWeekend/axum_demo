@@ -6,7 +6,7 @@ use crate::{
     dao::UserDao,
     model::first::User,
     utils::RedisUtil,
-    vo::user_vo::UserQueryResp,
+    vo::user_vo::{UserFilter, UserFilterResp, UserInfoResp},
 };
 use axum::{Json, extract::State};
 use tracing::info;
@@ -62,22 +62,38 @@ pub async fn user_logout(State(state): State<AppState>, user: UserInfo) -> Resul
     Ok(format!("Logout successful").into())
 }
 
-// 查询所有用户，返回用户列表
+// 动态查询，返回用户列表
 pub async fn user_query(
     State(state): State<AppState>,
-    Json(parm): Json<crate::vo::user_vo::UserQueryReq>,
-) -> Result<Vec<UserQueryResp>> {
+    Json(parm): Json<crate::vo::PageReq<UserFilter>>,
+) -> Result<Vec<UserFilterResp>> {
     parm.validate()?;
     info!("Get all users with params: {:?}", parm);
-    let users = UserDao::query(&state.db, parm.page, parm.page_size).await?;
-    let users: Vec<UserQueryResp> = users
-        .iter()
-        .map(|u| UserQueryResp {
+    let users = UserDao::query(&state.db, parm).await?;
+    let users: Vec<UserFilterResp> = users
+        .into_iter()
+        .map(|u| UserFilterResp {
             user_id: u.id,
-            username: u.username.clone(),
+            username: u.username,
         })
         .collect();
     Ok(users.into())
+}
+
+// 查询详情信息
+pub async fn user_info(
+    State(state): State<AppState>,
+    Json(id): Json<u64>,
+) -> Result<Option<UserInfoResp>> {
+    let user = UserDao::query_by_id(&state.db, id).await?;
+    let user = user.map(|user| UserInfoResp {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+    });
+    Ok(user.into())
 }
 
 // 创建用户，返回新用户 ID
@@ -107,4 +123,20 @@ pub async fn user_create(
     };
     let new_user_id = UserDao::insert(&state.db, new_user).await?;
     Ok(new_user_id.into())
+}
+
+// 动态修改用户信息
+pub async fn user_update(
+    State(state): State<AppState>,
+    Json(parm): Json<crate::vo::user_vo::UserUpdateReq>,
+) -> Result<u64> {
+    parm.validate()?;
+    let users_id = UserDao::update_by_id(&state.db, parm).await?;
+    Ok(users_id.into())
+}
+
+// 删除用户
+pub async fn user_remove(State(state): State<AppState>, Json(id): Json<u64>) -> Result<u64> {
+    let user_id = UserDao::delete(&state.db, id).await?;
+    Ok(user_id.into())
 }

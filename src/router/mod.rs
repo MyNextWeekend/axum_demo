@@ -23,6 +23,9 @@ pub fn init(state: AppState) -> Router {
         .route("/user/logout", post(user::user_logout))
         .route("/user/create", post(user::user_create))
         .route("/user/query", post(user::user_query))
+        .route("/user/info", post(user::user_info))
+        .route("/user/update", post(user::user_update))
+        .route("/user/remove", post(user::user_remove))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             core::middleware::user_middleware,
