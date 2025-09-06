@@ -69,7 +69,7 @@ pub async fn user_query(
 ) -> Result<Vec<UserFilterResp>> {
     parm.validate()?;
     info!("Get all users with params: {:?}", parm);
-    let users = UserDao::query(&state.db, parm).await?;
+    let users = UserDao::query(&state.db, &parm).await?;
     let users: Vec<UserFilterResp> = users
         .into_iter()
         .map(|u| UserFilterResp {
@@ -131,7 +131,7 @@ pub async fn user_update(
     Json(parm): Json<crate::vo::user_vo::UserUpdateReq>,
 ) -> Result<u64> {
     parm.validate()?;
-    let users_id = UserDao::update_by_id(&state.db, parm).await?;
+    let users_id = UserDao::update_by_id(&state.db, &parm).await?;
     Ok(users_id.into())
 }
 

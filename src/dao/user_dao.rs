@@ -28,20 +28,20 @@ impl UserDao {
         Ok(user)
     }
 
-    pub async fn query(db: &MySqlPool, parm: PageReq<UserFilter>) -> Result<Vec<User>, Error> {
+    pub async fn query(db: &MySqlPool, parm: &PageReq<UserFilter>) -> Result<Vec<User>, Error> {
         // sqlx 提供的动态 SQL 构造器
         let mut builder = QueryBuilder::new("SELECT * FROM user WHERE 1=1");
-        if let Some(filter) = parm.filter {
-            if let Some(name) = filter.name {
+        if let Some(filter) = &parm.filter {
+            if let Some(name) = &filter.name {
                 builder.push("and name =").push_bind(name);
             }
-            if let Some(age) = filter.age {
+            if let Some(age) = &filter.age {
                 builder.push("and age =").push_bind(age);
             }
         }
         // ---------- 排序 ----------
         if let Some(sort_by) = &parm.sort_by {
-            builder.push(" ORDER BY ").push(sort_by.as_str());
+            builder.push(" ORDER BY ").push(sort_by);
             if let Some(order) = &parm.sort_order {
                 builder.push(" ").push(match order {
                     SortOrder::Asc => "ASC",
@@ -51,8 +51,7 @@ impl UserDao {
         }
         // ---------- 分页 ----------
         let offset = (parm.page.saturating_sub(1) * parm.page_size) as i64;
-        let limit = parm.page_size as i64;
-        builder.push(" limit ").push_bind(limit);
+        builder.push(" limit ").push_bind(parm.page_size);
         builder.push(" offset ").push_bind(offset);
         let users = builder.build_query_as().fetch_all(db).await?;
         Ok(users)
@@ -68,25 +67,25 @@ impl UserDao {
         Ok(rec.last_insert_id())
     }
 
-    pub async fn update_by_id(db: &MySqlPool, parm: UserUpdateReq) -> Result<u64, Error> {
+    pub async fn update_by_id(db: &MySqlPool, parm: &UserUpdateReq) -> Result<u64, Error> {
         // sqlx 提供的动态 SQL 构造器
         let mut builder = QueryBuilder::new("UPDATE users SET ");
         // 自动添加逗号
         let mut separated = builder.separated(", ");
-        if let Some(username) = parm.username {
+        if let Some(username) = &parm.username {
             separated.push(" username = ").push_bind(username);
         }
-        if let Some(password) = parm.password {
+        if let Some(password) = &parm.password {
             separated.push(" password = ").push_bind(password);
         }
-        if let Some(salt) = parm.salt {
+        if let Some(salt) = &parm.salt {
             separated.push(" salt = ").push_bind(salt);
         }
-        if let Some(role) = parm.role {
+        if let Some(role) = &parm.role {
             separated.push(" role = ").push_bind(role);
         }
         // WHERE 条件
-        builder.push(" WHERE id = ").push_bind(parm.id);
+        builder.push(" WHERE id = ").push_bind(&parm.id);
 
         let result = builder.build().execute(db).await?;
         Ok(result.rows_affected())
