@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use validator::Validate;
 
+pub mod endpoint_vo;
 pub mod user_vo;
 
 /// 排序方式
@@ -22,4 +23,10 @@ pub struct PageReq<T> {
     pub sort_by: Option<String>,       // 排序字段，例如 "created_at"
     pub sort_order: Option<SortOrder>, // 排序方式 asc/desc
     pub filter: Option<T>,             // 查询条件
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub struct IdReq {
+    pub id: u64,
 }

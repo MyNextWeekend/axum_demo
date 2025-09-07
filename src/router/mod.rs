@@ -6,6 +6,7 @@ use tracing::info;
 
 use crate::{AppState, core};
 
+mod endpoint;
 mod hello;
 mod user;
 
@@ -21,11 +22,18 @@ pub fn init(state: AppState) -> Router {
         // 用户相关路由
         .route("/user/login", post(user::user_login))
         .route("/user/logout", post(user::user_logout))
-        .route("/user/create", post(user::user_create))
-        .route("/user/query", post(user::user_query))
-        .route("/user/info", post(user::user_info))
-        .route("/user/update", post(user::user_update))
-        .route("/user/remove", post(user::user_remove))
+        // user 相关路由
+        .route("/user/create", post(user::create))
+        .route("/user/delete", post(user::delete))
+        .route("/user/update", post(user::update))
+        .route("/user/query", post(user::query))
+        .route("/user/info", post(user::info))
+        // endpoint 相关路由
+        .route("/endpoint/create", post(endpoint::create))
+        .route("/endpoint/delete", post(endpoint::delete))
+        .route("/endpoint/update", post(endpoint::update))
+        .route("/endpoint/query", post(endpoint::query))
+        .route("/endpoint/indo", post(endpoint::info))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             core::middleware::user_middleware,

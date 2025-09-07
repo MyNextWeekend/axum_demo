@@ -3,7 +3,7 @@ use crate::{
     model::first::User,
     vo::{
         PageReq, SortOrder,
-        user_vo::{UserFilter, UserUpdateReq},
+        user_vo::{SearchReq, UpdateReq},
     },
 };
 use sqlx::{Executor, MySql, QueryBuilder};
@@ -37,7 +37,7 @@ impl UserDao {
         Ok(user)
     }
 
-    pub async fn query<'e, E>(executor: E, parm: &PageReq<UserFilter>) -> Result<Vec<User>, Error>
+    pub async fn query<'e, E>(executor: E, parm: &PageReq<SearchReq>) -> Result<Vec<User>, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
@@ -82,7 +82,7 @@ impl UserDao {
         Ok(rec.last_insert_id())
     }
 
-    pub async fn update_by_id<'e, E>(executor: E, parm: &UserUpdateReq) -> Result<u64, Error>
+    pub async fn update_by_id<'e, E>(executor: E, parm: &UpdateReq) -> Result<u64, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
