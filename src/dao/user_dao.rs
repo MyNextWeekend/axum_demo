@@ -11,14 +11,14 @@ use sqlx::{Executor, MySql, QueryBuilder};
 pub struct UserDao;
 
 impl UserDao {
-    pub async fn insert<'e, E>(executor: E, user: User) -> Result<u64, Error>
+    pub async fn insert<'e, E>(executor: E, parm: User) -> Result<u64, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
         let rec = sqlx::query(
             "INSERT INTO user (username,password,salt,role,created_at,updated_at) VALUES (?,?,?,?,?,?)",
         )
-        .bind(user.username).bind(user.password).bind(user.salt).bind(user.role).bind(user.created_at).bind(user.updated_at )
+        .bind(parm.username).bind(parm.password).bind(parm.salt).bind(parm.role).bind(parm.created_at).bind(parm.updated_at )
         .execute(executor)
         .await?;
         Ok(rec.last_insert_id())
