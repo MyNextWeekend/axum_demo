@@ -11,30 +11,55 @@ use sqlx::{Executor, MySql, QueryBuilder};
 pub struct UserDao;
 
 impl UserDao {
-    pub async fn query_by_id<'e, E>(executor: E, id: u64) -> Result<Option<User>, Error>
+    pub async fn insert<'e, E>(executor: E, user: User) -> Result<u64, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
-        let user = sqlx::query_as::<_, User>("SELECT * FROM user WHERE id = ? ")
-            .bind(id)
-            .fetch_optional(executor)
-            .await?;
-        Ok(user)
+        let rec = sqlx::query(
+            "INSERT INTO user (username,password,salt,role,created_at,updated_at) VALUES (?,?,?,?,?,?)",
+        )
+        .bind(user.username).bind(user.password).bind(user.salt).bind(user.role).bind(user.created_at).bind(user.updated_at )
+        .execute(executor)
+        .await?;
+        Ok(rec.last_insert_id())
     }
 
-    pub async fn query_by_username<'e, E>(
-        executor: E,
-        username: &str,
-    ) -> Result<Option<User>, Error>
+    pub async fn delete<'e, E>(executor: E, id: u64) -> Result<u64, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
-        let user =
-            sqlx::query_as::<_, User>("SELECT * FROM user WHERE username = ? and enable_flag = 1")
-                .bind(username)
-                .fetch_optional(executor)
-                .await?;
-        Ok(user)
+        let rec = sqlx::query("UPDATE user SET enable_flag = 0 WHERE id = ?")
+            .bind(id)
+            .execute(executor)
+            .await?;
+        Ok(rec.rows_affected())
+    }
+
+    pub async fn update_by_id<'e, E>(executor: E, parm: &UpdateReq) -> Result<u64, Error>
+    where
+        E: Executor<'e, Database = MySql>,
+    {
+        // sqlx 提供的动态 SQL 构造器
+        let mut builder = QueryBuilder::new("UPDATE users SET ");
+        // 自动添加逗号
+        let mut separated = builder.separated(", ");
+        if let Some(username) = &parm.username {
+            separated.push(" username = ").push_bind(username);
+        }
+        if let Some(password) = &parm.password {
+            separated.push(" password = ").push_bind(password);
+        }
+        if let Some(salt) = &parm.salt {
+            separated.push(" salt = ").push_bind(salt);
+        }
+        if let Some(role) = &parm.role {
+            separated.push(" role = ").push_bind(role);
+        }
+        // WHERE 条件
+        builder.push(" WHERE id = ").push_bind(&parm.id);
+
+        let result = builder.build().execute(executor).await?;
+        Ok(result.rows_affected())
     }
 
     pub async fn query<'e, E>(executor: E, parm: &PageReq<SearchReq>) -> Result<Vec<User>, Error>
@@ -69,54 +94,29 @@ impl UserDao {
         Ok(users)
     }
 
-    pub async fn insert<'e, E>(executor: E, user: User) -> Result<u64, Error>
+    pub async fn query_by_id<'e, E>(executor: E, id: u64) -> Result<Option<User>, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
-        let rec = sqlx::query(
-            "INSERT INTO user (username,password,salt,role,created_at,updated_at) VALUES (?,?,?,?,?,?)",
-        )
-        .bind(user.username).bind(user.password).bind(user.salt).bind(user.role).bind(user.created_at).bind(user.updated_at )
-        .execute(executor)
-        .await?;
-        Ok(rec.last_insert_id())
-    }
-
-    pub async fn update_by_id<'e, E>(executor: E, parm: &UpdateReq) -> Result<u64, Error>
-    where
-        E: Executor<'e, Database = MySql>,
-    {
-        // sqlx 提供的动态 SQL 构造器
-        let mut builder = QueryBuilder::new("UPDATE users SET ");
-        // 自动添加逗号
-        let mut separated = builder.separated(", ");
-        if let Some(username) = &parm.username {
-            separated.push(" username = ").push_bind(username);
-        }
-        if let Some(password) = &parm.password {
-            separated.push(" password = ").push_bind(password);
-        }
-        if let Some(salt) = &parm.salt {
-            separated.push(" salt = ").push_bind(salt);
-        }
-        if let Some(role) = &parm.role {
-            separated.push(" role = ").push_bind(role);
-        }
-        // WHERE 条件
-        builder.push(" WHERE id = ").push_bind(&parm.id);
-
-        let result = builder.build().execute(executor).await?;
-        Ok(result.rows_affected())
-    }
-
-    pub async fn delete<'e, E>(executor: E, id: u64) -> Result<u64, Error>
-    where
-        E: Executor<'e, Database = MySql>,
-    {
-        let rec = sqlx::query("UPDATE user SET enable_flag = 0 WHERE id = ?")
+        let user = sqlx::query_as::<_, User>("SELECT * FROM user WHERE id = ? ")
             .bind(id)
-            .execute(executor)
+            .fetch_optional(executor)
             .await?;
-        Ok(rec.rows_affected())
+        Ok(user)
+    }
+
+    pub async fn query_by_username<'e, E>(
+        executor: E,
+        username: &str,
+    ) -> Result<Option<User>, Error>
+    where
+        E: Executor<'e, Database = MySql>,
+    {
+        let user =
+            sqlx::query_as::<_, User>("SELECT * FROM user WHERE username = ? and enable_flag = 1")
+                .bind(username)
+                .fetch_optional(executor)
+                .await?;
+        Ok(user)
     }
 }
