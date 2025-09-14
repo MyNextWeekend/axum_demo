@@ -1,0 +1,183 @@
+name: Axum 多平台构建与发布
+permissions:
+  contents: write  # 用于创建 GitHub Release 和上传产物
+  id-token: write # 可选，用于 Docker 镜像签名（若需）
+
+on:
+  push:
+    tags:
+      - "v*"          # 匹配 v0.1.0 这类全局标签
+      - "*/v*"        # 匹配 axum-app/v1.0.0 这类包专属标签
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "手动触发时的标签（如 v0.1.0)"
+        required: false
+        type: string
+
+jobs:
+  # 1. 规划构建：让 cargo-dist 分析项目，生成多平台构建清单
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      manifest: ${{ steps.plan.outputs.manifest }}
+      tag: ${{ github.ref_name || inputs.tag }}  # 提取标签名（推送/手动）
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive  # 若项目有子模块，需开启
+
+      - name: 安装 cargo-dist(Axum 推荐工具，自动处理多平台）
+        shell: bash
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            https://github.com/astral-sh/cargo-dist/releases/download/v0.28.7/cargo-dist-installer.sh | sh
+
+      - name: 生成构建计划（禁用源码 ZIP)
+        id: plan
+        run: |
+          # 生成多平台构建清单，明确不包含源码压缩包
+          dist plan \
+            --output-format=json \
+            --include-source-archives=false > dist-manifest.json
+          
+          # 输出清单到 CI 变量，供后续任务使用
+          echo "manifest=$(jq -c "." dist-manifest.json)" >> "$GITHUB_OUTPUT"
+
+      - name: 上传构建清单（用于调试）
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-plan
+          path: dist-manifest.json
+
+  # 2. 多平台构建：按清单构建 Windows/macOS/Linux 产物
+  build-multi-platform:
+    needs: plan
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false  # 一个平台失败不影响其他平台
+      matrix:
+        # 明确枚举需要的平台（适配 Axum 支持的系统）
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # 架构：Linux/macOS 支持 x86_64/aarch64，Windows 优先 x86_64
+        target:
+          - ${{ matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu' || '' }}
+          - ${{ matrix.os == 'ubuntu-latest' && 'aarch64-unknown-linux-gnu' || '' }}
+          - ${{ matrix.os == 'macos-latest' && 'x86_64-apple-darwin' || '' }}
+          - ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
+          - ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
+        # 排除空值（避免无效目标）
+        exclude:
+          - os: ubuntu-latest
+            target: ""
+          - os: macos-latest
+            target: ""
+          - os: windows-latest
+            target: ""
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Rust 工具链（适配目标架构）
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}  # 为当前平台安装指定架构的编译目标
+
+      - name: 安装系统依赖(Linux 需 OpenSSL,Axum 依赖）
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev
+
+      - name: 缓存 Rust 依赖（加速编译）
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}-${{ matrix.target }}-cargo-cache
+
+      - name: 编译 Axum 项目(Release 模式，带调试信息便于排查）
+        run: |
+          cargo build --release --target ${{ matrix.target }} \
+            --features "axum/default"  # 按需添加 Axum 额外特性（如 websocket)
+
+      - name: 重命名产物（添加平台标识，避免冲突）
+        id: rename
+        shell: bash
+        run: |
+          # 定义产物名（示例:axum-app-v0.1.0-windows-x86_64.exe)
+          PRODUCT_NAME="axum-app-${{ needs.plan.outputs.tag }}-${{ matrix.os }}-${{ matrix.target }}"
+          # 根据系统添加后缀
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            PRODUCT_NAME="${PRODUCT_NAME}.exe"
+          fi
+          # 移动产物到统一目录
+          mkdir -p target/dist
+          cp "target/${{ matrix.target }}/release/axum-app" "target/dist/${PRODUCT_NAME}"
+          # 输出产物路径到变量
+          echo "path=target/dist/${PRODUCT_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: 生成产物校验和(SHA256,便于用户验证)
+        run: |
+          cd target/dist
+          sha256sum "${{ steps.rename.outputs.path##*/ }}" > "${{ steps.rename.outputs.path##*/ }}.sha256"
+
+      - name: 上传平台产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: axum-artifacts-${{ matrix.os }}-${{ matrix.target }}
+          path: |
+            target/dist/*
+            !target/dist/*.sha256  # 校验和统一在后续步骤生成
+
+  # 3. 聚合产物与生成全局校验和
+  aggregate-artifacts:
+    needs: [plan, build-multi-platform]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载所有平台产物
+        uses: actions/download-artifact@v4
+        with:
+          pattern: axum-artifacts-*
+          path: axum-dist
+          merge-multiple: true  # 合并所有平台产物到同一目录
+
+      - name: 生成全局校验和文件（包含所有产物）
+        run: |
+          cd axum-dist
+          sha256sum * > axum-app-${{ needs.plan.outputs.tag }}-SHA256SUMS.txt
+
+      - name: 上传最终产物包
+        uses: actions/upload-artifact@v4
+        with:
+          name: axum-final-dist
+          path: |
+            axum-dist/*
+            axum-dist/*.sha256
+
+  # 4. 创建 GitHub Release 并上传产物
+  create-release:
+    needs: [plan, aggregate-artifacts]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''  # 只在标签推送/手动触发时执行
+    steps:
+      - name: 下载最终产物
+        uses: actions/download-artifact@v4
+        with:
+          name: axum-final-dist
+          path: axum-dist
+
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.plan.outputs.tag }}
+          name: Axum App Release ${{ needs.plan.outputs.tag }}
+          body: |
+            ## Axum 项目 ${{ needs.plan.outputs.tag }} 发布
+            支持平台：
+            - Linux (x86_64/aarch64)
+            - macOS (x86_64/M1/M2)
+            - Windows (x86_64)
+            校验和文件: axum-app-${{ needs.plan.outputs.tag }}-SHA256SUMS.txt
+          files: axum-dist/*  # 上传所有产物（二进制 + 校验和）
+          draft: false
+          prerelease: ${{ contains(needs.plan.outputs.tag, 'beta') || contains(needs.plan.outputs.tag, 'alpha') }}
