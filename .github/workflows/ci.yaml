@@ -1,4 +1,4 @@
-name: 自动构建 by uv
+name: 自动构建 release
 on:
   push:
     # branches:
