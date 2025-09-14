@@ -2,6 +2,8 @@ use config::{Config, Environment, File};
 use serde::Deserialize;
 use tracing::info;
 
+use crate::core::constant;
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppInfo {
     pub name: String,
@@ -41,9 +43,11 @@ impl AppConfig {
 
         let conf = Config::builder()
             // 1. 从配置文件读取
-            .add_source(File::with_name(".config").required(false))
+            .add_source(File::with_name(constant::CONFIG_NAMR).required(false))
             // 2. 从环境变量覆盖，使用前缀 APP_
-            .add_source(Environment::with_prefix("APP").separator("_"))
+            .add_source(
+                Environment::with_prefix(constant::ENV_PREFIX).separator(constant::ENV_SEPARATOR),
+            )
             .build()
             .unwrap();
 

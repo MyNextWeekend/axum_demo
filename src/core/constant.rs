@@ -1,4 +1,17 @@
 /// ==============================
+/// 配置文件 / 环境变量前缀 / 环境变量前缀分隔符
+/// ==============================
+pub const CONFIG_NAMR: &str = ".config";
+pub const ENV_PREFIX: &str = "APP";
+pub const ENV_SEPARATOR: &str = "_";
+
+/// ==============================
+/// 日志 trace
+/// ==============================
+pub const TRACE_LOG: &str = "request";
+pub const TRACE_HEADER: &str = "x-trace-id";
+
+/// ==============================
 /// HTTP / 路由 / Header / Cookie
 /// ==============================
 pub const SESSION_KEY: &str = "Session"; // session前缀
@@ -9,8 +22,8 @@ pub const CONTENT_TYPE_FORM: &str = "application/x-www-form-urlencoded";
 /// ==============================
 /// 分页 / 限流 / 超时
 /// ==============================
-pub const DEFAULT_PAGE_SIZE: usize = 20; // 默认分页大小
-pub const MAX_PAGE_SIZE: usize = 100; // 最大分页大小
+pub const MIN_PAGE_SIZE: u32 = 1; // 默认分页大小
+pub const MAX_PAGE_SIZE: u32 = 100; // 最大分页大小
 pub const LOGIN_RATE_LIMIT: u32 = 5; // 每分钟允许登录次数
 pub const REQUEST_TIMEOUT_SECS: u64 = 10; // 请求超时秒数
 

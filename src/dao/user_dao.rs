@@ -87,9 +87,8 @@ impl UserDao {
             }
         }
         // ---------- 分页 ----------
-        let offset = (parm.page.saturating_sub(1) * parm.page_size) as i64;
         builder.push(" limit ").push_bind(parm.page_size);
-        builder.push(" offset ").push_bind(offset);
+        builder.push(" offset ").push_bind(parm.offset());
         let users = builder.build_query_as().fetch_all(executor).await?;
         Ok(users)
     }
