@@ -38,20 +38,24 @@ jobs:
 
       - name: 找到 WIN 构建的产物
         if: matrix.os == 'windows'
-        run: dir target\release\
-        # since the runner is dynamic shellcheck (from actionlint) can't infer this is powershell
-        # so we specify it explicitly
         shell: powershell
+        run: |
+          mkdir dist
+          Copy-Item target\release\axum_demo.exe dist\axum_demo-${{ matrix.os }}-${{ matrix.target }}.exe
+          dir dist\
 
       - name: 找到 MAC 构建的产物
         if: matrix.os != 'windows'
-        run: find target/release/
+        run: |
+          mkdir dist
+          cp target/release/axum_demo dist/axum_demo-${{ matrix.os  }}-${{ matrix.target }}
+          find dist/
 
       - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os  }}-${{ matrix.target }}
-          path: target/release/*
+          path: dist/*
 
   merge-build-artifacts:
     runs-on: ubuntu-latest
@@ -84,8 +88,6 @@ jobs:
         run: |
           echo "当前目录结构："
           tree dist  # 显示完整目录结构
-          echo "找到的wheel文件："
-          find dist -name "*.whl"  # 查找所有wheel文件
 
       - name: 创建GitHub Release
         uses: softprops/action-gh-release@v2
@@ -93,7 +95,6 @@ jobs:
           # 从标签名提取版本号作为发布标题
           name: Release ${{ github.ref_name }}
           # 上传dist目录下的所有文件
-          files: |
-            dist/**/*.whl
+          files: dist/*
           draft: true  # 设为草稿（不直接发布）
           prerelease: false  # 不设为预发布（正式版本）
