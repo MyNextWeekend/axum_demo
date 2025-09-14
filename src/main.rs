@@ -27,6 +27,8 @@ async fn main() {
     // 初始化应用状态
     let state: AppState = AppState::new(config).await.unwrap();
     let addr = state.config.app.addr.clone();
+    let name = state.config.app.name.clone();
+    let version = state.config.app.version.clone();
 
     // 初始化定时任务
     scheduler::init(Arc::new(state.clone())).await;
@@ -36,6 +38,11 @@ async fn main() {
 
     // 启动 HTTP 服务器
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-    info!("Listening on {}", listener.local_addr().unwrap());
+    info!(
+        "{} {} listening on {}",
+        name,
+        version,
+        listener.local_addr().unwrap()
+    );
     axum::serve(listener, app).await.unwrap();
 }

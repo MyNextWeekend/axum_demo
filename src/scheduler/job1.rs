@@ -6,7 +6,7 @@ use tracing::info;
 use crate::core::state::AppState;
 
 pub fn create_job(state: Arc<AppState>) -> Job {
-    Job::new_async("0/5 * * * * *", move |_uuid, _l| {
+    Job::new_async(state.config.jobs.cron_job1.clone(), move |_uuid, _l| {
         let state = state.clone();
         Box::pin(async move {
             let mut counter = state.counter.lock().await;
