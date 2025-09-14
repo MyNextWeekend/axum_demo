@@ -61,12 +61,7 @@ jobs:
         # 明确枚举需要的平台（适配 Axum 支持的系统）
         os: [ubuntu-latest, macos-latest, windows-latest]
         # 架构：Linux/macOS 支持 x86_64/aarch64，Windows 优先 x86_64
-        target:
-          - ${{ matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu' || '' }}
-          - ${{ matrix.os == 'ubuntu-latest' && 'aarch64-unknown-linux-gnu' || '' }}
-          - ${{ matrix.os == 'macos-latest' && 'x86_64-apple-darwin' || '' }}
-          - ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin' || '' }}
-          - ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc' || '' }}
+        target: [x86_64 , aarch64]
         # 排除空值（避免无效目标）
         exclude:
           - os: ubuntu-latest
