@@ -14,3 +14,9 @@ pool_size = 5
 [jobs]
 cron_job1 = "0/5 * * * * *"
 cron_job2 = "0/10 * * * * *"
+
+[log]
+directory = "./logs"
+file_name = "system.log"
+file_level = "info"
+console_level = "debug"

@@ -30,17 +30,24 @@ pub struct JobsConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct Log {
+    pub directory: String,
+    pub file_name: String,
+    pub file_level: String,
+    pub console_level: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct AppConfig {
     pub app: AppInfo,
     pub database: DatabaseConfig,
     pub redis: RedisConfig,
     pub jobs: JobsConfig,
+    pub log: Log,
 }
 
 impl AppConfig {
     pub fn init() -> Self {
-        info!("Loading configuration...");
-
         let conf = Config::builder()
             // 1. 从配置文件读取
             .add_source(File::with_name(constant::CONFIG_NAMR).required(false))
