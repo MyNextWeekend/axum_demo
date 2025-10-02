@@ -26,6 +26,8 @@ impl<T> Resp<T> {
             data: Some(data),
         }
     }
+}
+impl Resp<()> {
     /// 构造失败响应.  code: 0 成功，非 0 失败
     pub(crate) fn error(code: u32, msg: impl Into<String>) -> Self {
         Resp {
@@ -161,10 +163,10 @@ impl IntoResponse for Error {
 
         if self.expose() {
             // 公开错误信息给用户
-            return Resp::<()>::error(self.code(), self.to_string()).into_response();
+            return Resp::error(self.code(), self.to_string()).into_response();
         } else {
             // 非公开错误信息，返回通用提示
-            return Resp::<()>::error(self.code(), "服务器内部错误").into_response();
+            return Resp::error(self.code(), "服务器内部错误").into_response();
         }
     }
 }
