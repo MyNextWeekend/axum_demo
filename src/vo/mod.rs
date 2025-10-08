@@ -39,3 +39,10 @@ impl<T> PageReq<T> {
 pub struct IdReq {
     pub id: u64,
 }
+
+/// IDs 请求体
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IdsReq {
+    pub ids: Vec<u64>,
+}
