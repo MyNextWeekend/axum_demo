@@ -24,15 +24,19 @@ impl UserDao {
         Ok(rec.last_insert_id())
     }
 
-    pub async fn delete<'e, E>(executor: E, id: u64) -> Result<u64, Error>
+    pub async fn delete<'e, E>(executor: E, ids: Vec<u64>) -> Result<u64, Error>
     where
         E: Executor<'e, Database = MySql>,
     {
-        let rec = sqlx::query("UPDATE user SET enable_flag = 0 WHERE id = ?")
-            .bind(id)
-            .execute(executor)
-            .await?;
-        Ok(rec.rows_affected())
+        let mut builder = QueryBuilder::new("UPDATE user SET enable_flag = 0 WHERE id in (");
+        let mut separated = builder.separated(", ");
+        for id in ids {
+            separated.push_bind(id);
+        }
+        builder.push(")");
+        let result = builder.build().execute(executor).await?;
+
+        Ok(result.rows_affected())
     }
 
     pub async fn update_by_id<'e, E>(executor: E, parm: &UpdateReq) -> Result<u64, Error>

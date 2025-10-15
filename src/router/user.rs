@@ -7,7 +7,7 @@ use crate::{
     model::first::User,
     utils::RedisUtil,
     vo::{
-        IdReq, PageReq,
+        IdReq, IdsReq, PageReq,
         user_vo::{InfoResp, InsertReq, LoginReq, LoginResp, SearchReq, SearchResp, UpdateReq},
     },
 };
@@ -95,9 +95,9 @@ pub async fn create(
 }
 
 // 删除用户
-pub async fn delete(State(state): State<AppState>, Json(id): Json<u64>) -> Result<u64> {
-    let user_id = UserDao::delete(&state.db, id).await?;
-    Ok(user_id.into())
+pub async fn delete(State(state): State<AppState>, Json(parm): Json<IdsReq>) -> Result<u64> {
+    let lins = UserDao::delete(&state.db, parm.ids).await?;
+    Ok(lins.into())
 }
 
 // 动态修改用户信息
