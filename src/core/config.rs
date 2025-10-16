@@ -1,6 +1,4 @@
-use config::{Config, Environment, File};
 use serde::Deserialize;
-use tracing::info;
 
 use crate::core::constant;
 
@@ -48,16 +46,17 @@ pub struct AppConfig {
 
 impl AppConfig {
     pub fn init() -> Self {
-        let conf = Config::builder()
+        let conf = config::Config::builder()
             // 1. 从配置文件读取
-            .add_source(File::with_name(constant::CONFIG_NAMR).required(false))
+            .add_source(config::File::with_name(constant::CONFIG_NAMR).required(false))
             // 2. 从环境变量覆盖，使用前缀 APP_
             .add_source(
-                Environment::with_prefix(constant::ENV_PREFIX).separator(constant::ENV_SEPARATOR),
+                config::Environment::with_prefix(constant::ENV_PREFIX)
+                    .separator(constant::ENV_SEPARATOR),
             )
             .build()
-            .unwrap();
+            .expect("读取配置文件失败!!!");
 
-        conf.try_deserialize().unwrap()
+        conf.try_deserialize().expect("配置文件反序列化失败!!!")
     }
 }
