@@ -1,0 +1,13 @@
+$menuBg: #304156;
+
+$menuText: #bfcbd9;
+$menuActiveText: #409EFF;
+$subMenuActiveText: #f4f4f5;
+
+
+:export {
+    menuBg: $menuBg;
+    menuText: $menuText;
+    menuActiveText: $menuActiveText;
+    subMenuActiveText: $subMenuActiveText;
+}

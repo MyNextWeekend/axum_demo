@@ -79,7 +79,7 @@ pub enum Error {
     NotLogin,
 
     /// 权限不足
-    #[error("权限不足")]
+    #[error("授权失败: {0}")]
     Unauthorized(String),
 
     /// 外部 API 调用失败

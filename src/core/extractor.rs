@@ -1,12 +1,13 @@
 use std::time::Duration;
 
-use crate::{core::constant, model::first::User, utils::RedisUtil, AppState, Error};
+use crate::{AppState, Error, core::constant, model::first::User, utils::RedisUtil};
 use axum::{extract::FromRequestParts, http::request::Parts};
 use serde::{Deserialize, Serialize};
+use tracing::info;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserInfo {
-    token: String,
+    pub token: String,
     pub user_db: User,
 }
 
@@ -22,6 +23,26 @@ impl UserInfo {
         Ok(Self {
             token: token.to_string(),
             user_db: user,
+        })
+    }
+
+    pub async fn login(user_db: User, state: &AppState) -> Result<Self, Error> {
+        // 生成随机值存放数据库
+        let salt = chrono::Local::now().timestamp();
+        // 登陆信息存放在 redis 中
+        let redis = RedisUtil::new(state.redis.clone());
+        let session_key = format!("{}:{}:{}", constant::SESSION_KEY, user_db.id, salt);
+        redis
+            .set_with_expire(
+                &session_key,
+                serde_json::to_string(&user_db).unwrap(),
+                Duration::from_secs(constant::EXPIRATION_SECS),
+            )
+            .await?;
+        info!("User login successful: {:?}", &user_db.username);
+        Ok(Self {
+            token: session_key,
+            user_db,
         })
     }
 

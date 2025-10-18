@@ -1,11 +1,8 @@
-use std::time::Duration;
-
 use crate::{
     AppState, Result,
-    core::{constant, extractor::UserInfo},
+    core::extractor::UserInfo,
     dao::UserDao,
     model::first::User,
-    utils::RedisUtil,
     vo::{
         IdReq, IdsReq, PageReq,
         user_vo::{InfoResp, InsertReq, LoginReq, LoginResp, SearchReq, SearchResp, UpdateReq},
@@ -25,36 +22,23 @@ pub async fn user_login(
 
     let user = UserDao::query_by_username(&state.db, &payload.username).await?;
 
-    match user {
-        Some(u) if u.password == payload.password => {
-            // 生成随机值存放数据库
-            let salt = chrono::Local::now().timestamp();
-            // 登陆信息存放在 redis 中
-            let redis = RedisUtil::new(state.redis.clone());
-            let session_key = format!("{}:{}:{}", constant::SESSION_KEY, u.id, salt);
-            redis
-                .set_with_expire(
-                    &session_key,
-                    serde_json::to_string(&u).unwrap(),
-                    Duration::from_secs(constant::EXPIRATION_SECS),
-                )
-                .await?;
-            info!("User login successful: {:?}", payload.username);
-            Ok(LoginResp {
-                user_id: u.id,
-                token: session_key,
-                username: u.username,
-                role: u.role,
-            }
-            .into())
+    if let Some(user) = user
+        && user.password == payload.password
+    {
+        let user = UserInfo::login(user, &state).await?;
+        Ok(LoginResp {
+            user_id: user.user_db.id,
+            token: user.token,
+            username: user.user_db.username,
+            role: user.user_db.role,
         }
-        _ => {
-            info!(
-                "Invalid username or password for user: {}",
-                payload.username
-            );
-            Err(crate::Error::Unauthorized("账号或密码错误".into()))
-        }
+        .into())
+    } else {
+        info!(
+            "Invalid username or password for user: {}",
+            payload.username
+        );
+        Err(crate::Error::Unauthorized("账号或密码错误".into()))
     }
 }
 
