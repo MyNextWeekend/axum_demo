@@ -15,9 +15,19 @@
 - redis工具类
 - dao数据库操作层
 
+# 构建步骤
+
+```shell
+# 构建前端
+cd frontend && npm run build
+# 构建二进制文件
+cargo run build
+
+```
+
 ## 使用 GitHub Actions 构建多平台产物
 
-```bash
+```shell
 
 # 示例见文件夹 .github/workflows
 
