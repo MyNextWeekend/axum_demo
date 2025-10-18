@@ -45,14 +45,15 @@ pub fn init(state: AppState) -> Router {
     info!("Initializing router...");
     // 公开路由
     let public_routes = axum::Router::new()
-        .route("/user/login", post(user::user_login))
+        .route("/user/login", post(user::login))
         .route("/hello/one", get(hello::hello_world))
         .route("/hello/two", post(hello::hello_extract));
 
     // 管理员路由，套用 一些 中间件
     let admin_routes = axum::Router::new()
         // 用户相关路由
-        .route("/user/logout", post(user::user_logout))
+        .route("/user/permission",post(user::permission))
+        .route("/user/logout", post(user::logout))
         // user 相关路由
         .route("/user/create", post(user::create))
         .route("/user/delete", post(user::delete))

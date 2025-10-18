@@ -20,6 +20,16 @@ pub struct LoginResp {
     pub role: i32,
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PermissionResp {
+    pub roles: Vec<String>,
+    pub name: String,
+    pub avatar: String,
+    pub introduction: String,
+}
+
+
 #[derive(Deserialize, Debug, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct InsertReq {

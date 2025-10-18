@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { publicRoutes, privateRoutes, resetRouter } from '@/router/index.js'
 import { getToken, setToken, removeToken } from '@/utils/auth.js'
-import { login, getInfo, logout } from '@/apis/user.js'
+import { login, permission, logout } from '@/apis/user.js'
 
 /**
  * 判断当前用户是否有权限访问该路由
@@ -69,8 +69,8 @@ const useUserStore = defineStore('user', {
       setToken(this.token)
     },
 
-    async getInfo() {
-      const res = await getInfo()
+    async getPermission() {
+      const res = await permission()
       const { roles, name, avatar, introduction } = res.data
       if (!roles || roles.length <= 0) {
         reject('返回角色信息不能为空')

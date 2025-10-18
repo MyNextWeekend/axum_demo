@@ -8,11 +8,11 @@ export function login(data) {
   })
 }
 
-export function getInfo(token) {
+export function permission() {
   return request({
     url: '/user/permission',
     method: 'post',
-    headers: { token: token },
+    data: {},
   })
 }
 

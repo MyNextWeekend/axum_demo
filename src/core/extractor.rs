@@ -31,19 +31,16 @@ impl UserInfo {
         let salt = chrono::Local::now().timestamp();
         // 登陆信息存放在 redis 中
         let redis = RedisUtil::new(state.redis.clone());
-        let session_key = format!("{}:{}:{}", constant::SESSION_KEY, user_db.id, salt);
+        let token = format!("{}:{}:{}", constant::SESSION_KEY, user_db.id, salt);
         redis
             .set_with_expire(
-                &session_key,
+                &token,
                 serde_json::to_string(&user_db).unwrap(),
                 Duration::from_secs(constant::EXPIRATION_SECS),
             )
             .await?;
         info!("User login successful: {:?}", &user_db.username);
-        Ok(Self {
-            token: session_key,
-            user_db,
-        })
+        Ok(Self { token, user_db })
     }
 
     /// 刷新会话有效期

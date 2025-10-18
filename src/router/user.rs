@@ -5,7 +5,10 @@ use crate::{
     model::first::User,
     vo::{
         IdReq, IdsReq, PageReq,
-        user_vo::{InfoResp, InsertReq, LoginReq, LoginResp, SearchReq, SearchResp, UpdateReq},
+        user_vo::{
+            InfoResp, InsertReq, LoginReq, LoginResp, PermissionResp, SearchReq, SearchResp,
+            UpdateReq,
+        },
     },
 };
 use axum::{Json, extract::State};
@@ -13,7 +16,7 @@ use tracing::info;
 use validator::Validate;
 
 // 用户登录，成功返回 token
-pub async fn user_login(
+pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginReq>,
 ) -> Result<LoginResp> {
@@ -42,8 +45,19 @@ pub async fn user_login(
     }
 }
 
+// 获取用户权限信息
+pub async fn permission(user: UserInfo) -> Result<PermissionResp> {
+    Ok(PermissionResp {
+        roles: vec![String::from("admin")],
+        name: user.user_db.username,
+        avatar: String::from(""),
+        introduction: String::from(""),
+    }
+    .into())
+}
+
 // 用户登出，删除 redis 中的 session
-pub async fn user_logout(State(state): State<AppState>, user: UserInfo) -> Result<String> {
+pub async fn logout(State(state): State<AppState>, user: UserInfo) -> Result<String> {
     info!("User logout attempt: {:?}", user.user_db.username);
     user.logout(&state).await?;
     Ok(format!("Logout successful").into())

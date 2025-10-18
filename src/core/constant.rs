@@ -15,7 +15,7 @@ pub const TRACE_HEADER: &str = "x-trace-id";
 /// HTTP / 路由 / Header / Cookie
 /// ==============================
 pub const SESSION_KEY: &str = "Session"; // session前缀
-pub const AUTH_HEADER: &str = "Authorization"; // HTTP Header 名称
+pub const AUTH_HEADER: &str = "Token"; // HTTP Header 名称
 pub const CONTENT_TYPE_JSON: &str = "application/json"; // JSON Content-Type
 pub const CONTENT_TYPE_FORM: &str = "application/x-www-form-urlencoded";
 

@@ -75,7 +75,7 @@ pub enum Error {
     NotFound(String),
 
     /// 未登录或会话过期
-    #[error("未登录")]
+    #[error("未登录或会话过期")]
     NotLogin,
 
     /// 权限不足
