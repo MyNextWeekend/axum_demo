@@ -82,7 +82,11 @@ const useUserStore = defineStore('user', {
     },
 
     async logout() {
-      await logout()
+      // try {
+      //   await logout()
+      // } catch (error) {
+      //   console.warn(error)
+      // }
       this.name = ''
       this.token = null
       this.roles = []

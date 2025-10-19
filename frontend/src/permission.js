@@ -49,12 +49,8 @@ router.beforeEach(async (to, from, next) => {
     } catch (error) {
       console.log('路由守卫异常:', error)
       // 删除令牌并转到登录页面重新登录
-      userStore.logout()
-      ElNotification({
-        message: err?.message || err || '异常，请重新登录',
-        type: 'error',
-      })
-      return next({ path: '/login', query: { redirect: to.fullPath } })
+      await userStore.logout()
+      return next({ path: '/login', query: { redirect: to.fullPath }, replace: true })
     }
   }
 
