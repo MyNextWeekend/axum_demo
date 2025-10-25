@@ -50,6 +50,6 @@ git push origin --delete v0.1.0
 # 安装工具
 cargo install sea-orm-cli@^2.0.0-rc   
 # 生成 entity
-sea-orm-cli generate entity --output-dir ./src/entity --entity-format dense --with-serde both --model-extra-attributes 'serde(rename_all="camelCase")'
+sea-orm-cli generate entity --output-dir ./src/entity --entity-format dense --with-serde both --model-extra-attributes 'serde(rename_all="camelCase")' --with-prelude none
 
 ```
