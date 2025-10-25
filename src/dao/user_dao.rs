@@ -23,27 +23,27 @@ impl UserDao {
         db: &sea_orm::DbConn,
         parm: &user_vo::UpdateReq,
     ) -> Result<entity::user::Model, Error> {
-        let pear = entity::user::Entity::find_by_id(parm.id)
+        let model = entity::user::Entity::find_by_id(parm.id)
             .one(db)
             .await?
             .ok_or_else(|| Error::NotFound(format!("ID {} 不存在", parm.id)))?;
-        let mut pear: entity::user::ActiveModel = pear.into();
+        let mut model: entity::user::ActiveModel = model.into();
 
         // 遍历字段，只更新有值的字段
         if let Some(username) = &parm.username {
-            pear.username = Set(username.clone());
+            model.username = Set(username.clone());
         }
         if let Some(password) = &parm.password {
-            pear.password = Set(password.clone());
+            model.password = Set(password.clone());
         }
         if let Some(salt) = &parm.salt {
-            pear.salt = Set(Some(salt.clone()));
+            model.salt = Set(Some(salt.clone()));
         }
         if let Some(role) = &parm.role {
-            pear.role = Set(role.clone());
+            model.role = Set(role.clone());
         }
 
-        let result = pear.update(db).await?;
+        let result = model.update(db).await?;
         Ok(result)
     }
 

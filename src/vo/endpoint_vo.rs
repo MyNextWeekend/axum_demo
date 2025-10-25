@@ -10,7 +10,7 @@ pub struct InsertReq {
     pub domain_code: String,         //  域名code
     pub path: String,                //  接口路径
     pub description: Option<String>, //  接口描述
-    pub is_active: Option<u8>,       //  是否启用
+    pub is_active: Option<i8>,       //  是否启用
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -23,5 +23,5 @@ pub struct UpdateReq {
     pub domain_code: Option<String>, //  域名code
     pub path: Option<String>,        //  接口路径
     pub description: Option<String>, //  接口描述
-    pub is_active: Option<u8>,       //  是否启用
+    pub is_active: Option<i8>,       //  是否启用
 }

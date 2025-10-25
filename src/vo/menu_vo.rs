@@ -10,7 +10,7 @@ pub struct InsertReq {
     pub component: String,
     pub redirect: Option<String>,
     pub sort: i32,
-    // pub meta: Option<Json>,
+    pub meta: Option<serde_json::Value>,
     pub status: i8,
     pub remark: Option<String>,
 }
@@ -19,10 +19,13 @@ pub struct InsertReq {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateReq {
     pub id: i64,
-    #[validate(length(min = 3, max = 20, message = "用户名长度必须在3到20个字符之间"))]
-    pub username: Option<String>,
-    #[validate(length(min = 6, max = 20, message = "密码长度必须在6到20个字符之间"))]
-    pub password: Option<String>,
-    #[validate(email(message = "邮箱格式不正确"))]
-    pub email: Option<String>,
+    pub parent_id: Option<i64>,
+    pub path: Option<String>,
+    pub name: Option<String>,
+    pub component: Option<String>,
+    pub redirect: Option<String>,
+    pub sort: Option<i32>,
+    pub meta: Option<serde_json::Value>,
+    pub status: Option<i8>,
+    pub remark: Option<String>,
 }
