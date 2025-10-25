@@ -3,10 +3,10 @@ use std::sync::Arc;
 use tokio_cron_scheduler::Job;
 use tracing::info;
 
-use crate::core::state::AppState;
+use crate::core::{config::CONFIG, state::AppState};
 
 pub fn create_job(state: Arc<AppState>) -> Job {
-    Job::new_async(state.config.jobs.cron_job1.clone(), move |_uuid, _l| {
+    Job::new_async(CONFIG.jobs.cron_job1.clone(), move |_uuid, _l| {
         let state = state.clone();
         Box::pin(async move {
             let mut counter = state.counter.lock().await;

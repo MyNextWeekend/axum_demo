@@ -1,17 +1,15 @@
-use std::sync::Arc;
-
 use tracing::info;
 use tracing_appender::{non_blocking::WorkerGuard, rolling};
 use tracing_subscriber::{Layer, layer::SubscriberExt, util::SubscriberInitExt};
 
-use crate::core::config::AppConfig;
+use crate::core::config::CONFIG;
 
-pub fn init(config: Arc<AppConfig>) -> WorkerGuard {
-    let file_filter = tracing_subscriber::EnvFilter::new(&config.log.file_level);
-    let console_filter = tracing_subscriber::EnvFilter::new(&config.log.console_level);
+pub fn init() -> WorkerGuard {
+    let file_filter = tracing_subscriber::EnvFilter::new(&CONFIG.log.file_level);
+    let console_filter = tracing_subscriber::EnvFilter::new(&CONFIG.log.console_level);
 
     // --- 文件日志 ---
-    let file_appender = rolling::daily(&config.log.directory, &config.log.file_name);
+    let file_appender = rolling::daily(&CONFIG.log.directory, &CONFIG.log.file_name);
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     // --- 文件日志 Layer ---

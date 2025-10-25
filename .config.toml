@@ -2,10 +2,16 @@
 name = "axum_demo"
 version = "v1.0.0"
 addr = "0.0.0.0:8080"
+base_url = '/api'
 
 [database]
 url = "mysql://root:123456@localhost:3306/first"
-pool_size = 10
+connect_timeout = 8                              #连接数据库时的超时时间
+acquire_timeout = 15                             #获取连接池中空闲连接的最大等待时间
+idle_timeout = 600                               #空闲连接在连接池中保持多久后会被回收
+max_lifetime = 3600                              #连接最大存活时间，超过这个时间会被回收
+min_connections = 2                              #保持最小空闲连接
+max_connections = 12                             #最大连接数量
 
 [redis]
 url = "redis://127.0.0.1/2"

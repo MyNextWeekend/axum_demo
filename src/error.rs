@@ -60,7 +60,7 @@ pub enum Error {
 
     /// 数据库操作失败
     #[error("数据库错误: {0}")]
-    DatabaseError(#[from] sqlx::Error),
+    DatabaseError(#[from] sea_orm::DbErr),
 
     #[error("BB8 池错误: {0}")]
     RedisPoolError(#[from] bb8::RunError<redis::RedisError>),
@@ -102,6 +102,13 @@ pub enum Error {
     #[error("非法状态: {0}")]
     InvalidState(String),
 
+    /// ==================== 以下为通用查询错误 ====================
+    #[error("无效的查询字段: {0}")]
+    InvalidQueryField(String),
+
+    #[error("构建查询失败: {0}")]
+    BuildQueryError(String),
+
     /// 未知错误
     #[error("未知错误: {0}")]
     Unknown(String),
@@ -118,11 +125,13 @@ impl Error {
             Error::DatabaseError(_) => 1005,
             Error::RedisPoolError(_) => 1006,
             Error::RedisError(_) => 1006,
-            Error::ExternalServiceError(_) => 10010076,
-            Error::NetworkError(_) => 10010087,
+            Error::ExternalServiceError(_) => 1007,
+            Error::NetworkError(_) => 1008,
             Error::IOError(_) => 1009,
             Error::AlreadyExists(_) => 1010,
             Error::InvalidState(_) => 1011,
+            Error::InvalidQueryField(_) => 1012,
+            Error::BuildQueryError(_) => 1013,
             Error::Unknown(_) => 1099,
         }
     }

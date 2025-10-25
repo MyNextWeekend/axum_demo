@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::{AppState, Error, core::constant, model::first::User, utils::RedisUtil};
+use crate::{AppState, Error, core::constant, entity, utils::RedisUtil};
 use axum::{extract::FromRequestParts, http::request::Parts};
 use serde::{Deserialize, Serialize};
 use tracing::info;
@@ -8,7 +8,7 @@ use tracing::info;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserInfo {
     pub token: String,
-    pub user_db: User,
+    pub user_db: entity::user::Model,
 }
 
 impl UserInfo {
@@ -18,7 +18,7 @@ impl UserInfo {
         let value = redis.get::<String>(&token).await?.ok_or(Error::NotLogin)?;
 
         // 2. 解析 user_info
-        let user: User = serde_json::from_str(&value)
+        let user: entity::user::Model = serde_json::from_str(&value)
             .map_err(|e| Error::Unknown(format!("转换 user 失败:{}", e)))?;
         Ok(Self {
             token: token.to_string(),
@@ -26,7 +26,7 @@ impl UserInfo {
         })
     }
 
-    pub async fn login(user_db: User, state: &AppState) -> Result<Self, Error> {
+    pub async fn login(user_db: entity::user::Model, state: &AppState) -> Result<Self, Error> {
         // 生成随机值存放数据库
         let salt = chrono::Local::now().timestamp();
         // 登陆信息存放在 redis 中

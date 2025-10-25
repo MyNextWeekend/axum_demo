@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use serde::Deserialize;
 
 use crate::core::constant;
@@ -7,12 +9,18 @@ pub struct AppInfo {
     pub name: String,
     pub version: String,
     pub addr: String,
+    pub base_url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct DatabaseConfig {
     pub url: String,
-    pub pool_size: u32,
+    pub connect_timeout: u64,
+    pub acquire_timeout: u64,
+    pub idle_timeout: u64,
+    pub max_lifetime: u64,
+    pub min_connections: u32,
+    pub max_connections: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -45,7 +53,7 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
-    pub fn init() -> Self {
+    fn init() -> Self {
         let conf = config::Config::builder()
             // 1. 从配置文件读取
             .add_source(config::File::with_name(constant::CONFIG_NAMR).required(false))
@@ -60,3 +68,5 @@ impl AppConfig {
         conf.try_deserialize().expect("配置文件反序列化失败!!!")
     }
 }
+
+pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| AppConfig::init());
