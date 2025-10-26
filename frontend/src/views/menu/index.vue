@@ -1,5 +1,5 @@
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, nextTick } from 'vue'
 import { onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { MenuAdd, MenuDelete, MenuUpdate, MenuQuery, MenuInfo } from '@/apis/menu.js'
@@ -14,6 +14,7 @@ const textMap = reactive({
 const dialogStatus = ref("")
 const dialogFormVisible = ref(false)
 const loading = ref(false)
+const formRef = ref(null)
 
 const listData = ref([])
 const menuTree = ref([])
@@ -37,6 +38,11 @@ const queryParams = reactive({
     size: 20,
     sorts: []
 })
+const rules = {
+    name: [{ required: true, message: '请输入菜单名称', trigger: 'blur' }],
+    path: [{ required: true, message: '请输入路径', trigger: 'blur' }],
+    status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
 
 // 重置 infoData（保持响应性）
 function resetInfoData() {
@@ -59,24 +65,31 @@ function handleCreate() {
     resetInfoData()
     dialogStatus.value = 'create'
     dialogFormVisible.value = true
+    // 等弹窗渲染后清除验证状态
+    nextTick(() => {
+        formRef.value?.clearValidate()
+    })
 }
 // 新增
 async function createData() {
-    try {
-        loading.value = true
-        const res = await MenuAdd(infoData)
-        if (res.code === 0) {
-            ElMessage.success('新增成功')
-            dialogFormVisible.value = false
-            handleSearch()
-        } else {
-            ElMessage.error(res.message || '新增失败')
+    formRef.value.validate(async valid => {
+        if (!valid) return
+        try {
+            loading.value = true
+            const res = await MenuAdd(infoData)
+            if (res.code === 0) {
+                ElMessage.success('新增成功')
+                dialogFormVisible.value = false
+                handleSearch()
+            } else {
+                ElMessage.error(res.message || '新增失败')
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            loading.value = false
         }
-    } catch (err) {
-        console.error(err)
-    } finally {
-        loading.value = false
-    }
+    })
 }
 
 function handleDelete(row) {
@@ -108,6 +121,10 @@ function handleUpdate(row) {
     Object.assign(infoData, row.menu) // copy obj 或者 调用 API 查询详情
     dialogStatus.value = 'update'
     dialogFormVisible.value = true
+    // 等弹窗渲染后清除验证状态
+    nextTick(() => {
+        formRef.value?.clearValidate()
+    })
 }
 
 // 更新数据
@@ -177,39 +194,38 @@ onMounted(() => {
         </el-table>
 
         <el-dialog v-model="dialogFormVisible" :title="textMap[dialogStatus]" width="500px">
-            <el-form :model="infoData">
+            <el-form :model="infoData" :rules="rules" ref="formRef">
                 <div class="dialog-item">
-                    <el-form-item label="父节点" label-width="140px">
+                    <el-form-item label="父节点" prop="parentId" label-width="140px">
                         <el-tree-select v-model="infoData.parentId" :data="menuTree"
                             :props="{ value: 'id', label: 'label', children: 'children' }" placeholder="请选择父节点"
                             check-strictly :default-expand-all="true" clearable />
                     </el-form-item>
-                    <el-form-item label="路由路径" label-width="140px">
+                    <el-form-item label="路由路径" prop="path" label-width="140px">
                         <el-input v-model="infoData.path" autocomplete="off" />
                     </el-form-item>
-                    <el-form-item label="菜单名称" label-width="140px">
+                    <el-form-item label="菜单名称" prop="name" label-width="140px">
                         <el-input v-model="infoData.name" autocomplete="off" />
                     </el-form-item>
-                    <el-form-item label="vue路径" label-width="140px">
+                    <el-form-item label="vue路径" prop="component" label-width="140px">
                         <el-input v-model="infoData.component" autocomplete="off" />
                     </el-form-item>
-                    <el-form-item label="重定向" label-width="140px">
+                    <el-form-item label="重定向" prop="redirect" label-width="140px">
                         <el-input v-model="infoData.redirect" autocomplete="off" />
                     </el-form-item>
-                    <el-form-item label="排序" label-width="140px">
+                    <el-form-item label="排序" prop="sort" label-width="140px">
                         <el-input-number v-model="infoData.sort" autocomplete="off" />
                     </el-form-item>
-                    <el-form-item label="扩展" label-width="140px">
+                    <el-form-item label="扩展" prop="meta" label-width="140px">
                         <el-input v-model="infoData.meta" autocomplete="off" />
                     </el-form-item>
-                    <el-form-item label="状态" label-width="140px">
-                        <!-- <el-input-number v-model="infoData.status" autocomplete="off" /> -->
+                    <el-form-item label="状态" prop="status" label-width="140px">
                         <el-select v-model="infoData.status" placeholder="请选择状态">
                             <el-option v-for="item in MENU_STATUS" :key="item.value" :label="item.label"
                                 :value="item.value" />
                         </el-select>
                     </el-form-item>
-                    <el-form-item label="备注" label-width="140px">
+                    <el-form-item label="备注" prop="remark" label-width="140px">
                         <el-input v-model="infoData.remark" autocomplete="off" />
                     </el-form-item>
                 </div>
