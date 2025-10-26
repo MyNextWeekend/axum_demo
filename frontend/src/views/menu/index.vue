@@ -3,6 +3,8 @@ import { reactive, ref } from 'vue'
 import { onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { MenuAdd, MenuDelete, MenuUpdate, MenuQuery, MenuInfo } from '@/apis/menu.js'
+import { MENU_STATUS } from '@/enums/common'
+import { enumToLabel } from '@/utils/enumUtils'
 
 // 操作模式对应标题
 const textMap = reactive({
@@ -145,8 +147,6 @@ async function handleSearch() {
         loading.value = false
     }
 }
-import { MENU_STATUS } from '@/enums/common'
-import { enumToLabel } from '@/utils/enumUtils'
 
 onMounted(() => {
     handleSearch()
