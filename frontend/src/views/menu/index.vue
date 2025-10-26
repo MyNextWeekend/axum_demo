@@ -129,21 +129,24 @@ function handleUpdate(row) {
 
 // 更新数据
 async function updateData() {
-    try {
-        loading.value = true
-        const res = await MenuUpdate(infoData)
-        if (res.code === 0) {
-            ElMessage.success('修改成功')
-            dialogFormVisible.value = false
-            handleSearch()
-        } else {
-            ElMessage.error(res.message || '修改失败')
+    formRef.value.validate(async valid => {
+        if (!valid) return
+        try {
+            loading.value = true
+            const res = await MenuUpdate(infoData)
+            if (res.code === 0) {
+                ElMessage.success('修改成功')
+                dialogFormVisible.value = false
+                handleSearch()
+            } else {
+                ElMessage.error(res.message || '修改失败')
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            loading.value = false
         }
-    } catch (err) {
-        console.error(err)
-    } finally {
-        loading.value = false
-    }
+    })
 }
 // 查询菜单列表
 async function handleSearch() {
