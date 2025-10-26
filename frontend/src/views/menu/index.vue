@@ -14,6 +14,7 @@ const dialogFormVisible = ref(false)
 const loading = ref(false)
 
 const listData = ref([])
+const menuTree = ref([])
 const infoData = reactive({
     id: null,
     parentId: null,
@@ -40,7 +41,7 @@ function resetInfoData() {
     // 初始化 reactive 包裹的对象， 不丢失 响应性
     Object.assign(infoData, {
         id: null,
-        parent_: null,
+        parentId: null,
         path: null,
         name: null,
         component: null,
@@ -78,30 +79,33 @@ async function createData() {
 }
 
 function handleDelete(row) {
-    ElMessageBox.confirm(`确认删除「${row.name}」吗？`, '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning',
-    })
-        .then(async () => {
-            try {
-                const res = await MenuDelete({ id: row.id })
-                if (res.code === 0) {
-                    ElMessage.success('删除成功')
-                    handleSearch()
-                } else {
-                    ElMessage.error(res.message || '删除失败')
-                }
-            } catch (err) {
-                console.error(err)
-                ElMessage.error('请求出错')
+    ElMessageBox.confirm(
+        `确认删除「${row.menu.name}」吗？`,
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(async () => {
+        try {
+            const res = await MenuDelete({ id: row.menu.id })
+            if (res.code === 0) {
+                ElMessage.success('删除成功')
+                handleSearch()
+            } else {
+                ElMessage.error(res.message || '删除失败')
             }
-        })
+        } catch (err) {
+            console.error(err)
+            ElMessage.error('请求出错')
+        }
+    })
         .catch(() => { })
 }
 
 function handleUpdate(row) {
-    Object.assign(infoData, row) // copy obj 或者 调用 API 查询详情
+    Object.assign(infoData, row.menu) // copy obj 或者 调用 API 查询详情
     dialogStatus.value = 'update'
     dialogFormVisible.value = true
 }
@@ -132,6 +136,9 @@ async function handleSearch() {
         const res = await MenuQuery(queryParams)
         if (res.code === 0) {
             listData.value = res.data || []
+            menuTree.value = [
+                { id: 0, label: '根节点', children: res.data } // 手动加一个根节点
+            ]
         } else {
             ElMessage.error(res.message || '加载失败')
         }
@@ -153,12 +160,12 @@ onMounted(() => {
             <el-radio-button label="新增" @click="handleCreate" />
         </el-radio-group>
 
-        <el-table :data="listData" row-key="id">
-            <el-table-column fixed prop="name" label="路由名称" />
-            <el-table-column prop="component" label="组件标识/路径" />
-            <el-table-column prop="meta" label="路由元信息" />
-            <el-table-column prop="status" label="状态" />
-            <el-table-column prop="remark" label="备注" />
+        <el-table :data="listData" row-key="menu.id">
+            <el-table-column fixed prop="menu.name" label="路由名称" />
+            <el-table-column prop="menu.component" label="组件标识/路径" />
+            <el-table-column prop="menu.meta" label="路由元信息" />
+            <el-table-column prop="menu.status" label="状态" />
+            <el-table-column prop="menu.remark" label="备注" />
             <el-table-column fixed="right" label="操作" min-width="50">
                 <template #default="{ row }">
                     <el-button link type="primary" size="small" @click="handleUpdate(row)">编辑</el-button>
@@ -171,10 +178,9 @@ onMounted(() => {
             <el-form :model="infoData">
                 <div class="dialog-item">
                     <el-form-item label="父节点" label-width="140px">
-                        <el-select v-model.number="infoData.parentId" placeholder="请选择">
-                            <el-option label="根节点" value="1" />
-                            <el-option label="other" value="2" />
-                        </el-select>
+                        <el-tree-select v-model="infoData.parentId" :data="menuTree"
+                            :props="{ value: 'id', label: 'label', children: 'children' }" placeholder="请选择父节点"
+                            check-strictly :default-expand-all="true" clearable />
                     </el-form-item>
                     <el-form-item label="路由路径" label-width="140px">
                         <el-input v-model="infoData.path" autocomplete="off" />

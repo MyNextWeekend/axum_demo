@@ -4,6 +4,7 @@ use axum::extract::State;
 use crate::core::state::AppState;
 
 use crate::dao::{self, MenuDao};
+use crate::service::menu_service;
 use crate::vo::{self, menu_vo};
 use crate::{Result, entity};
 
@@ -31,10 +32,9 @@ pub async fn update(
 pub async fn query(
     State(state): State<AppState>,
     Json(parm): Json<vo::QueryReq>,
-) -> Result<Vec<entity::menu::Model>> {
-    // 此处全量查询，不分页
-    let page_result = dao::query_all::<entity::menu::Entity>(&state.db, &parm).await?;
-    Ok(page_result.into())
+) -> Result<Vec<menu_service::MenuNode>> {
+    let menu_tree = menu_service::get_menu_tree(&state.db, &parm).await?;
+    Ok(menu_tree.into())
 }
 
 pub async fn info(

@@ -4,6 +4,7 @@ mod entity;
 mod error;
 mod router;
 mod scheduler;
+mod service;
 mod utils;
 mod vo;
 
