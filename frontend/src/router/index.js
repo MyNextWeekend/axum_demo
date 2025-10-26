@@ -66,6 +66,11 @@ export const privateRoutes = [
         component: () => import('@/views/user/index.vue'),
         meta: { title: '个人中心', icon: 'document' },
       },
+      {
+        path: '/summer/menu',
+        component: () => import('@/views/menu/index.vue'),
+        meta: { title: '路由配置', icon: 'document' },
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/404' },

@@ -1,40 +1,40 @@
 import request from '@/utils/request'
 
-export function EndpointAdd(data) {
+export function MenuAdd(data) {
   return request({
-    url: '/endpoint/create',
+    url: '/menu/create',
     method: 'post',
     data: data,
   })
 }
 
-export function EndpointDelete(data) {
+export function MenuDelete(data) {
   return request({
-    url: '/endpoint/delete',
+    url: '/menu/delete',
     method: 'post',
     data: data,
   })
 }
 
-export function EndpointUpdate(data) {
+export function MenuUpdate(data) {
   return request({
-    url: '/endpoint/update',
+    url: '/menu/update',
     method: 'post',
     data: data,
   })
 }
 
-export function EndpointQuery(data) {
+export function MenuQuery(data) {
   return request({
-    url: '/endpoint/query',
+    url: '/menu/query',
     method: 'post',
     data: data,
   })
 }
 
-export function EndpointInfo(data) {
+export function MenuInfo(data) {
   return request({
-    url: '/endpoint/info',
+    url: '/menu/info',
     method: 'post',
     data: data,
   })

@@ -23,16 +23,17 @@ pub async fn delete(State(state): State<AppState>, Json(parm): Json<vo::IdReq>) 
 pub async fn update(
     State(state): State<AppState>,
     Json(parm): Json<menu_vo::UpdateReq>,
-) -> Result<i64> {
+) -> Result<entity::menu::Model> {
     let menu = MenuDao::update_by_id(&state.db, &parm).await?;
-    Ok(menu.id.into())
+    Ok(menu.into())
 }
 
 pub async fn query(
     State(state): State<AppState>,
     Json(parm): Json<vo::QueryReq>,
-) -> Result<vo::PageResp<entity::menu::Model>> {
-    let page_result = dao::query_by_page::<entity::menu::Entity>(&state.db, &parm).await?;
+) -> Result<Vec<entity::menu::Model>> {
+    // 此处全量查询，不分页
+    let page_result = dao::query_all::<entity::menu::Entity>(&state.db, &parm).await?;
     Ok(page_result.into())
 }
 

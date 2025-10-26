@@ -2,7 +2,7 @@ import request from '@/utils/request'
 
 export function ParameterAdd(data) {
   return request({
-    url: '/parameter/add',
+    url: '/parameter/create',
     method: 'post',
     data: data,
   })
@@ -32,13 +32,6 @@ export function ParameterQuery(data) {
   })
 }
 
-export function ParameterStatistic(data) {
-  return request({
-    url: '/parameter/statistic',
-    method: 'post',
-    data: data,
-  })
-}
 
 export function ParameterInfo(data) {
   return request({

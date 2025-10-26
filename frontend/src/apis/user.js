@@ -56,14 +56,6 @@ export function UserQuery(data) {
   })
 }
 
-export function UserStatistic(data) {
-  return request({
-    url: '/user/statistic',
-    method: 'post',
-    data: data,
-  })
-}
-
 export function UserInfo(data) {
   return request({
     url: '/user/info',
