@@ -72,7 +72,6 @@ async function createData() {
         }
     } catch (err) {
         console.error(err)
-        ElMessage.error('请求出错')
     } finally {
         loading.value = false
     }
@@ -98,7 +97,6 @@ function handleDelete(row) {
             }
         } catch (err) {
             console.error(err)
-            ElMessage.error('请求出错')
         }
     })
         .catch(() => { })
@@ -124,7 +122,6 @@ async function updateData() {
         }
     } catch (err) {
         console.error(err)
-        ElMessage.error('请求出错')
     } finally {
         loading.value = false
     }
@@ -144,11 +141,12 @@ async function handleSearch() {
         }
     } catch (err) {
         console.error(err)
-        ElMessage.error('请求出错')
     } finally {
         loading.value = false
     }
 }
+import { MENU_STATUS } from '@/enums/common'
+import { enumToLabel } from '@/utils/enumUtils'
 
 onMounted(() => {
     handleSearch()
@@ -164,7 +162,11 @@ onMounted(() => {
             <el-table-column fixed prop="menu.name" label="路由名称" />
             <el-table-column prop="menu.component" label="组件标识/路径" />
             <el-table-column prop="menu.meta" label="路由元信息" />
-            <el-table-column prop="menu.status" label="状态" />
+            <el-table-column prop="menu.status" label="状态">
+                <template #default="{ row }">
+                    {{ enumToLabel(MENU_STATUS, row.menu.status) }}
+                </template>
+            </el-table-column>
             <el-table-column prop="menu.remark" label="备注" />
             <el-table-column fixed="right" label="操作" min-width="50">
                 <template #default="{ row }">
@@ -201,7 +203,11 @@ onMounted(() => {
                         <el-input v-model="infoData.meta" autocomplete="off" />
                     </el-form-item>
                     <el-form-item label="状态" label-width="140px">
-                        <el-input-number v-model="infoData.status" autocomplete="off" />
+                        <!-- <el-input-number v-model="infoData.status" autocomplete="off" /> -->
+                        <el-select v-model="infoData.status" placeholder="请选择状态">
+                            <el-option v-for="item in MENU_STATUS" :key="item.value" :label="item.label"
+                                :value="item.value" />
+                        </el-select>
                     </el-form-item>
                     <el-form-item label="备注" label-width="140px">
                         <el-input v-model="infoData.remark" autocomplete="off" />
