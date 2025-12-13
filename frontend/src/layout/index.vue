@@ -63,6 +63,7 @@ const menuStore = useMenuStore()
   background: #304156; // 深色背景
   transition: width 0.3s ease;
   overflow: hidden;
+  border-right: 1px solid #202a36; // 增加一个细微的右边框来分割区域
 }
 
 .main-container {

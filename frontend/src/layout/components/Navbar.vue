@@ -84,14 +84,11 @@ async function logout() {
 <style lang="scss" scoped>
 .navbar {
   height: 50px;
-  line-height: 50px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  border-bottom: 1px solid #e6e6e6;
-  padding: 0 1px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 0 16px; // 增加左右内边距
   box-sizing: border-box;
 
   .hamburger-container {
@@ -110,13 +107,13 @@ async function logout() {
   .right-menu {
     display: flex;
     align-items: center;
-    padding-right: 36px; // 给右边留空间，可调整大小
-
+    gap: 16px; // 使用 gap 增加元素间距
 
     .right-menu-item {
       cursor: pointer;
       display: flex;
       align-items: center;
+      padding: 4px; // 增加内边距
 
       &.hover-effect:hover {
         background: #f5f5f5;
@@ -126,14 +123,15 @@ async function logout() {
 
     .avatar-container {
       .avatar-wrapper {
-        position: relative;
-        height: 32px;
-        width: 32px;
+        height: 40px;
+        width: 40px;
         border-radius: 50%;
         overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
+        background-color: #f0f2f5; // 增加一个浅灰色背景
+        transition: background-color 0.3s;
 
         .user-avatar {
           font-size: 30px; // svg 大小

@@ -12,6 +12,7 @@ pub async fn create(
     State(state): State<AppState>,
     Json(parm): Json<menu_vo::InsertReq>,
 ) -> Result<i64> {
+    // parm.validate()?; // 如果你在 vo 中添加了验证规则
     let menu = MenuDao::insert(&state.db, &parm).await?;
     Ok(menu.id.into())
 }
@@ -25,6 +26,7 @@ pub async fn update(
     State(state): State<AppState>,
     Json(parm): Json<menu_vo::UpdateReq>,
 ) -> Result<entity::menu::Model> {
+    // parm.validate()?; // 如果你在 vo 中添加了验证规则
     let menu = MenuDao::update_by_id(&state.db, &parm).await?;
     Ok(menu.into())
 }

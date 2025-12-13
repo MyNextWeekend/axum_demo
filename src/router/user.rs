@@ -64,7 +64,7 @@ pub async fn create(
     Json(parm): Json<user_vo::InsertReq>,
 ) -> Result<i64> {
     parm.validate()?;
-    if user.is_admin() {
+    if !user.is_admin() {
         return Err(crate::Error::Unauthorized("无权限操作".into()));
     }
     info!("Create user attempt by: {:?}", user.user_db.username);
